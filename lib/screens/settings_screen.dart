@@ -139,32 +139,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: SecondaryButton(
-                    text: 'STATES GALLERY',
-                    icon: Icons.grid_view_outlined,
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const StatesGalleryScreen()),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: SecondaryButton(
-                    text: 'FLOW MAP',
-                    icon: Icons.map_outlined,
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const NavigationFlowScreen()),
-                      );
-                    },
-                  ),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 450;
+                if (isNarrow) {
+                  return Column(
+                    children: [
+                      SecondaryButton(
+                        text: 'STATES GALLERY',
+                        icon: Icons.grid_view_outlined,
+                        width: double.infinity,
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (context) => const StatesGalleryScreen()),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      SecondaryButton(
+                        text: 'FLOW MAP',
+                        icon: Icons.map_outlined,
+                        width: double.infinity,
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (context) => const NavigationFlowScreen()),
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                } else {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: SecondaryButton(
+                          text: 'STATES GALLERY',
+                          icon: Icons.grid_view_outlined,
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (context) => const StatesGalleryScreen()),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SecondaryButton(
+                          text: 'FLOW MAP',
+                          icon: Icons.map_outlined,
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (context) => const NavigationFlowScreen()),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
             const SizedBox(height: 24),
 
@@ -179,22 +212,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 8),
             CustomCard(
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Active Theme Mode',
-                        style: AppTheme.bodyMd(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        apiState.isDarkTheme ? 'Cyberpunk Dark' : 'Professional Light',
-                        style: AppTheme.caption(context, colors.textSecondary),
-                      ),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Active Theme Mode',
+                          style: AppTheme.bodyMd(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          apiState.isDarkTheme ? 'Cyberpunk Dark' : 'Professional Light',
+                          style: AppTheme.caption(context, colors.textSecondary),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 12),
                   IconButton(
                     icon: Icon(
                       apiState.isDarkTheme ? Icons.dark_mode : Icons.light_mode,
@@ -275,12 +312,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            scName,
-                            style: AppTheme.bodySm(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
+                          Expanded(
+                            child: Text(
+                              scName,
+                              style: AppTheme.bodySm(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
+                          const SizedBox(width: 12),
                           if (isCustom)
                             IconButton(
                               icon: Icon(Icons.delete_outline, color: colors.accentDanger, size: 18),
@@ -290,9 +330,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               },
                             )
                           else
-                            Text(
-                              'PRESET',
-                              style: AppTheme.caption(context, colors.textSecondary).copyWith(fontSize: 9),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: colors.borderColor,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'PRESET',
+                                style: AppTheme.caption(context, colors.textSecondary).copyWith(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                         ],
                       ),
@@ -371,21 +421,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Purge Mutated States',
-                            style: AppTheme.bodySm(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            'Resets portfolio simulation deltas.',
-                            style: AppTheme.caption(context, colors.textSecondary),
-                          ),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Purge Mutated States',
+                              style: AppTheme.bodySm(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              'Resets portfolio simulation deltas.',
+                              style: AppTheme.caption(context, colors.textSecondary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 12),
                       ElevatedButton(
                         onPressed: () {
                           apiState.resetPortfolio();
@@ -401,21 +455,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const Divider(),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Clear Sockets Logs',
-                            style: AppTheme.bodySm(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            'Wipes out terminal stream histories.',
-                            style: AppTheme.caption(context, colors.textSecondary),
-                          ),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Clear Sockets Logs',
+                              style: AppTheme.bodySm(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              'Wipes out terminal stream histories.',
+                              style: AppTheme.caption(context, colors.textSecondary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 12),
                       OutlinedButton(
                         onPressed: () {
                           apiState.clearAllLogs();
@@ -474,12 +532,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     final colors = AppTheme.of(context);
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: AppTheme.bodySm(context, colors.textPrimary),
+        Expanded(
+          child: Text(
+            label,
+            style: AppTheme.bodySm(context, colors.textPrimary),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
+        const SizedBox(width: 12),
         Switch(
           value: val,
           activeColor: colors.accentPrimary,
@@ -497,13 +559,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: AppTheme.bodySm(context, colors.textPrimary),
+          Expanded(
+            child: Text(
+              title,
+              style: AppTheme.bodySm(context, colors.textPrimary),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
+          const SizedBox(width: 12),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               AgentStatusDot(status: isConnected ? 'active' : 'error', size: 6),
               const SizedBox(width: 8),

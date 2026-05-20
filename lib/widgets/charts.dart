@@ -31,11 +31,11 @@ class PortfolioPieChart extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 180,
+      height: 250,
       child: PieChart(
         PieChartData(
           sectionsSpace: 4,
-          centerSpaceRadius: 32,
+          centerSpaceRadius: 50,
           startDegreeOffset: -90,
           sections: List.generate(assets.length, (index) {
             final asset = assets[index];
@@ -48,10 +48,10 @@ class PortfolioPieChart extends StatelessWidget {
               color: color,
               value: asset.displayAllocationPercent,
               title: '${asset.displayAllocationPercent.toStringAsFixed(0)}%',
-              radius: 28,
+              radius: 50,
               titleStyle: AppTheme.caption(context, textColor).copyWith(
                 fontWeight: FontWeight.bold,
-                fontSize: 9.5,
+                fontSize: 12,
               ),
               badgeWidget: null,
             );
@@ -62,7 +62,7 @@ class PortfolioPieChart extends StatelessWidget {
   }
 }
 
-class RiskGauge extends StatelessWidget {
+class RiskGauge extends StatefulWidget {
   final double riskScore; // 0 to 100
   final String riskLabel;
 
@@ -73,49 +73,94 @@ class RiskGauge extends StatelessWidget {
   });
 
   @override
+  State<RiskGauge> createState() => _RiskGaugeState();
+}
+
+class _RiskGaugeState extends State<RiskGauge> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _animation = Tween<double>(begin: 0, end: widget.riskScore).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(covariant RiskGauge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.riskScore != widget.riskScore) {
+      _animation = Tween<double>(begin: oldWidget.riskScore, end: widget.riskScore).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+      );
+      _controller.reset();
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = AppTheme.of(context);
     
     Color getRiskColor() {
-      if (riskScore < 35) return colors.accentSuccess;
-      if (riskScore < 70) return colors.accentWarning;
+      if (widget.riskScore < 35) return colors.accentSuccess;
+      if (widget.riskScore < 70) return colors.accentWarning;
       return colors.accentDanger;
     }
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 100,
-            width: 180,
-            child: CustomPaint(
-              painter: _RiskGaugePainter(
-                score: riskScore,
-                trackColor: colors.borderColor,
-                successColor: colors.accentSuccess,
-                warningColor: colors.accentWarning,
-                dangerColor: colors.accentDanger,
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        final currentScore = _animation.value;
+        return Container(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 100,
+                width: 180,
+                child: CustomPaint(
+                  painter: _RiskGaugePainter(
+                    score: currentScore,
+                    trackColor: colors.borderColor,
+                    successColor: colors.accentSuccess,
+                    warningColor: colors.accentWarning,
+                    dangerColor: colors.accentDanger,
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 8),
+              Text(
+                '${widget.riskScore.toStringAsFixed(0)} / 100',
+                style: AppTheme.headingMd(context, colors.textPrimary).copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                widget.riskLabel.toUpperCase(),
+                style: AppTheme.caption(context, getRiskColor()).copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            '${riskScore.toStringAsFixed(0)} / 100',
-            style: AppTheme.headingMd(context, colors.textPrimary).copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            riskLabel.toUpperCase(),
-            style: AppTheme.caption(context, getRiskColor()).copyWith(
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

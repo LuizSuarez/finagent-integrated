@@ -133,20 +133,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _buildQuickInputBar(context),
               const SizedBox(height: 20),
 
-              // Section: Risk Overview & Portfolio Snapshot side-by-side
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 11,
-                    child: _buildRiskOverview(context, apiState),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 12,
-                    child: _buildPortfolioSnapshot(context, apiState),
-                  ),
-                ],
+              // Section: Risk Overview & Portfolio Snapshot (responsive layout)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isNarrow = constraints.maxWidth < 550;
+                  if (isNarrow) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildRiskOverview(context, apiState),
+                        const SizedBox(height: 16),
+                        _buildPortfolioSnapshot(context, apiState),
+                      ],
+                    );
+                  } else {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 11,
+                          child: _buildRiskOverview(context, apiState),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 12,
+                          child: _buildPortfolioSnapshot(context, apiState),
+                        ),
+                      ],
+                    );
+                  }
+                },
               ),
               const SizedBox(height: 24),
 
@@ -379,7 +395,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 10),
           SizedBox(
-            height: 230,
+            height: 250,
             child: ListView.builder(
               controller: _actionScrollController,
               scrollDirection: Axis.horizontal,
@@ -441,15 +457,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             separatorBuilder: (context, index) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final insight = feed[index];
-              return InsightCard(
-                insight: insight,
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => InsightDetailScreen(insight: insight),
-                    ),
-                  );
-                },
+              return StaggeredCardEntry(
+                index: index,
+                child: InsightCard(
+                  insight: insight,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => InsightDetailScreen(insight: insight),
+                      ),
+                    );
+                  },
+                ),
               );
             },
           ),
@@ -463,5 +482,65 @@ extension DoubleFormatter on double {
   String toStringAsRange() {
     final formatter = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
     return toStringAsFixed(0).replaceAllMapped(formatter, (Match m) => '${m[1]},');
+  }
+}
+
+class StaggeredCardEntry extends StatefulWidget {
+  final Widget child;
+  final int index;
+
+  const StaggeredCardEntry({
+    super.key,
+    required this.child,
+    required this.index,
+  });
+
+  @override
+  State<StaggeredCardEntry> createState() => _StaggeredCardEntryState();
+}
+
+class _StaggeredCardEntryState extends State<StaggeredCardEntry> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacityAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    Future.delayed(Duration(milliseconds: widget.index * 80), () {
+      if (mounted) {
+        _controller.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _opacityAnimation,
+        child: widget.child,
+      ),
+    );
   }
 }

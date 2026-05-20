@@ -127,52 +127,70 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
 
             // Section: After State panel, Diffs & Outcomes
             if (isComplete) ...[
-              // Section: Outcome summary
-              Text(
-                'PREDICTED OUTCOME METRIC',
-                style: AppTheme.caption(context, colors.textSecondary).copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
+              TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 600),
+                tween: Tween<double>(begin: 0.0, end: 1.0),
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 15 * (1 - value)),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Section: Outcome summary
+                    Text(
+                      'PREDICTED OUTCOME METRIC',
+                      style: AppTheme.caption(context, colors.textSecondary).copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildOutcomeCard(context, updatedAction),
+                    const SizedBox(height: 20),
+
+                    // Section: Side-by-side Diffs (collapsible)
+                    BeforeAfterState(
+                      before: updatedAction.displayBeforeState,
+                      after: updatedAction.displayAfterState,
+                      initiallyExpanded: true,
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Navigation CTAs
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SecondaryButton(
+                            text: 'VIEW FULL TRACE',
+                            icon: Icons.history,
+                            onPressed: () {
+                              // Switch tab to Agent Trace and pop
+                              final shellState = context.findAncestorStateOfType<MainShellState>();
+                              shellState?.onTabSelected(2); // Agent trace tab index
+                              Navigator.of(context).popUntil((route) => route.isFirst);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: PrimaryButton(
+                            text: 'DASHBOARD',
+                            icon: Icons.dashboard,
+                            onPressed: () {
+                              Navigator.of(context).popUntil((route) => route.isFirst);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              _buildOutcomeCard(context, updatedAction),
-              const SizedBox(height: 20),
-
-              // Section: Side-by-side Diffs (collapsible)
-              BeforeAfterState(
-                before: updatedAction.displayBeforeState,
-                after: updatedAction.displayAfterState,
-                initiallyExpanded: true,
-              ),
-              const SizedBox(height: 24),
-
-              // Navigation CTAs
-              Row(
-                children: [
-                  Expanded(
-                    child: SecondaryButton(
-                      text: 'VIEW FULL TRACE',
-                      icon: Icons.history,
-                      onPressed: () {
-                        // Switch tab to Agent Trace and pop
-                        final shellState = context.findAncestorStateOfType<MainShellState>();
-                        shellState?.onTabSelected(2); // Agent trace tab index
-                        Navigator.of(context).popUntil((route) => route.isFirst);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: PrimaryButton(
-                      text: 'DASHBOARD',
-                      icon: Icons.dashboard,
-                      onPressed: () {
-                        Navigator.of(context).popUntil((route) => route.isFirst);
-                      },
-                    ),
-                  ),
-                ],
               ),
             ],
             const SizedBox(height: 24),
@@ -285,13 +303,22 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    entry.key,
-                    style: AppTheme.caption(context, colors.textSecondary),
+                  Expanded(
+                    child: Text(
+                      entry.key,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.caption(context, colors.textSecondary),
+                    ),
                   ),
-                  Text(
-                    entry.value,
-                    style: AppTheme.monoSm(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      entry.value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.monoSm(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -326,12 +353,9 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
                 if (log.contains('[SIMULATOR]')) logColor = colors.accentPrimary;
                 if (log.contains('[OK]')) logColor = colors.accentSuccess;
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2.0),
-                  child: Text(
-                    log,
-                    style: AppTheme.monoSm(context, logColor),
-                  ),
+                return AnimatedLogEntry(
+                  log: log,
+                  logColor: logColor,
                 );
               },
             ),
@@ -399,6 +423,41 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class AnimatedLogEntry extends StatelessWidget {
+  final String log;
+  final Color logColor;
+
+  const AnimatedLogEntry({
+    super.key,
+    required this.log,
+    required this.logColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 250),
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0.0, 8.0 * (1.0 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2.0),
+        child: Text(
+          log,
+          style: AppTheme.monoSm(context, logColor),
+        ),
       ),
     );
   }

@@ -18,6 +18,41 @@ class AnalyticsScreen extends StatefulWidget {
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   String _dateRange = '7 Days'; // Today, 7 Days, 30 Days, All Time
+  final ScrollController _statsScrollController = ScrollController();
+  bool _isAutoScrolling = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAutoScroll();
+    });
+  }
+
+  @override
+  void dispose() {
+    _statsScrollController.dispose();
+    super.dispose();
+  }
+
+  void _startAutoScroll() {
+    if (!_statsScrollController.hasClients) return;
+    Future.doWhile(() async {
+      if (!_isAutoScrolling) return false;
+      await Future.delayed(const Duration(milliseconds: 40));
+      if (!_statsScrollController.hasClients || !_isAutoScrolling) return false;
+
+      final maxScroll = _statsScrollController.position.maxScrollExtent;
+      final currentScroll = _statsScrollController.position.pixels;
+
+      if (currentScroll >= maxScroll - 0.5) {
+        _statsScrollController.jumpTo(0);
+      } else {
+        _statsScrollController.jumpTo(currentScroll + 0.8);
+      }
+      return true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,12 +120,24 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 20),
 
             // Section: Summary Stats (Horizontal scroll)
-            Text(
-              'OPERATIONAL PERFORMANCE',
-              style: AppTheme.caption(context, colors.textSecondary).copyWith(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'OPERATIONAL PERFORMANCE',
+                  style: AppTheme.caption(context, colors.textSecondary).copyWith(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                Text(
+                  _isAutoScrolling ? '⚡ AUTO-SCROLLING (TAP TO PAUSE)' : '⏸️ PAUSED (TAP TO RESUME)',
+                  style: AppTheme.caption(context, _isAutoScrolling ? colors.accentPrimary : colors.textSecondary).copyWith(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             _buildSummaryStatsRow(context, totalRuns, insightsCount, simulatedCount),
@@ -109,43 +156,59 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 24),
 
             // Section: charts breakdown side by side
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 550;
+                final chart1 = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'INSIGHTS BY DOMAIN',
+                      style: AppTheme.caption(context, colors.textSecondary).copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    CustomCard(
+                      padding: const EdgeInsets.all(12),
+                      child: SimpleBarChart(data: domainBreakdown),
+                    ),
+                  ],
+                );
+                
+                final chart2 = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ACTIONS SIMULATED',
+                      style: AppTheme.caption(context, colors.textSecondary).copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    CustomCard(
+                      padding: const EdgeInsets.all(12),
+                      child: SimpleBarChart(data: outcomeBreakdown),
+                    ),
+                  ],
+                );
+
+                if (isNarrow) {
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'INSIGHTS BY DOMAIN',
-                        style: AppTheme.caption(context, colors.textSecondary).copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      CustomCard(
-                        padding: const EdgeInsets.all(12),
-                        child: SimpleBarChart(data: domainBreakdown),
-                      ),
+                      chart1,
+                      const SizedBox(height: 16),
+                      chart2,
                     ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
+                  );
+                } else {
+                  return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'ACTIONS SIMULATED',
-                        style: AppTheme.caption(context, colors.textSecondary).copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      CustomCard(
-                        padding: const EdgeInsets.all(12),
-                        child: SimpleBarChart(data: outcomeBreakdown),
-                      ),
+                      Expanded(child: chart1),
+                      const SizedBox(width: 12),
+                      Expanded(child: chart2),
                     ],
-                  ),
-                ),
-              ],
+                  );
+                }
+              },
             ),
             const SizedBox(height: 24),
 
@@ -201,44 +264,64 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final colors = AppTheme.of(context);
     final options = ['Today', '7 Days', '30 Days', 'All Time'];
 
-    return Row(
-      children: options.map((opt) {
-        final isSel = _dateRange == opt;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: ChoiceChip(
-            label: Text(
-              opt,
-              style: AppTheme.caption(context, isSel ? Colors.black : colors.textSecondary).copyWith(
-                fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: options.map((opt) {
+          final isSel = _dateRange == opt;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: ChoiceChip(
+              label: Text(
+                opt,
+                style: AppTheme.caption(context, isSel ? Colors.black : colors.textSecondary).copyWith(
+                  fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
+              selected: isSel,
+              selectedColor: colors.accentPrimary,
+              backgroundColor: colors.bgSurface,
+              onSelected: (val) {
+                if (val) {
+                  setState(() {
+                    _dateRange = opt;
+                  });
+                }
+              },
             ),
-            selected: isSel,
-            selectedColor: colors.accentPrimary,
-            backgroundColor: colors.bgSurface,
-            onSelected: (val) {
-              if (val) {
-                setState(() {
-                  _dateRange = opt;
-                });
-              }
-            },
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 
   Widget _buildSummaryStatsRow(BuildContext context, int runs, int insights, int simulated) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _buildStatCard(context, 'PIPELINES RUN', '$runs', Icons.settings_input_component),
-          _buildStatCard(context, 'INSIGHTS EXTRACTED', '$insights', Icons.auto_graph),
-          _buildStatCard(context, 'SIMULATIONS COMPLETED', '$simulated', Icons.science_outlined),
-          _buildStatCard(context, 'AVG EXECUTION DURATION', '7.2s', Icons.timer_outlined),
-        ],
+    final cards = [
+      _buildStatCard(context, 'PIPELINES RUN', '$runs', Icons.settings_input_component),
+      _buildStatCard(context, 'INSIGHTS EXTRACTED', '$insights', Icons.auto_graph),
+      _buildStatCard(context, 'SIMULATIONS COMPLETED', '$simulated', Icons.science_outlined),
+      _buildStatCard(context, 'AVG EXECUTION DURATION', '7.2s', Icons.timer_outlined),
+    ];
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isAutoScrolling = !_isAutoScrolling;
+          if (_isAutoScrolling) {
+            _startAutoScroll();
+          }
+        });
+      },
+      child: SizedBox(
+        height: 120,
+        child: ListView.builder(
+          controller: _statsScrollController,
+          scrollDirection: Axis.horizontal,
+          itemCount: cards.length * 500,
+          itemBuilder: (context, index) {
+            return cards[index % cards.length];
+          },
+        ),
       ),
     );
   }

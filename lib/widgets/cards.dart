@@ -205,14 +205,19 @@ class ActionCard extends StatelessWidget {
     final metricColor = action.displayIsPositiveMetric ? colors.accentSuccess : colors.accentWarning;
 
     return CustomCard(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isCompact ? 12 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -228,7 +233,6 @@ class ActionCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -314,20 +318,25 @@ class ActionCard extends StatelessWidget {
                   foregroundColor: Colors.black,
                   disabledBackgroundColor: colors.bgElevated,
                   disabledForegroundColor: colors.textSecondary,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 10 : 16,
+                    vertical: isCompact ? 8 : 10,
+                  ),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       action.displayStatus == 'simulated' ? Icons.check : Icons.insights,
-                      size: 14,
+                      size: isCompact ? 12 : 14,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 4),
                     Text(
                       action.displayStatus == 'simulated' ? 'Simulated' : 'Simulate',
                       style: AppTheme.caption(context, action.displayStatus == 'simulated' ? colors.textSecondary : Colors.black).copyWith(
                         fontWeight: FontWeight.bold,
+                        fontSize: isCompact ? 9 : 10,
                       ),
                     ),
                   ],

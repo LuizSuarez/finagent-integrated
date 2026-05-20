@@ -66,11 +66,15 @@ class PrimaryButton extends StatelessWidget {
                     Icon(icon, size: 18),
                     const SizedBox(width: 8),
                   ],
-                  Text(
-                    text,
-                    style: AppTheme.bodyMd(context, disabled ? colors.textSecondary : Colors.black).copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
+                  Flexible(
+                    child: Text(
+                      text,
+                      style: AppTheme.bodyMd(context, disabled ? colors.textSecondary : Colors.black).copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
                 ],
@@ -122,10 +126,14 @@ class SecondaryButton extends StatelessWidget {
               Icon(icon, size: 18, color: disabled ? colors.textSecondary : colors.accentPrimary),
               const SizedBox(width: 8),
             ],
-            Text(
-              text,
-              style: AppTheme.bodyMd(context, disabled ? colors.textSecondary : colors.accentPrimary).copyWith(
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                text,
+                style: AppTheme.bodyMd(context, disabled ? colors.textSecondary : colors.accentPrimary).copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
           ],
@@ -169,10 +177,14 @@ class GhostButton extends StatelessWidget {
             Icon(icon, size: 16, color: textColor),
             const SizedBox(width: 6),
           ],
-          Text(
-            text,
-            style: AppTheme.caption(context, textColor).copyWith(
-              fontWeight: FontWeight.bold,
+          Flexible(
+            child: Text(
+              text,
+              style: AppTheme.caption(context, textColor).copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],

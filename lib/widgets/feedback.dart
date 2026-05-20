@@ -117,16 +117,23 @@ class ProgressBar extends StatelessWidget {
         height: 6,
         width: double.infinity,
         color: colors.borderColor,
-        child: FractionallySizedBox(
-          alignment: Alignment.centerLeft,
-          widthFactor: progress.clamp(0.0, 1.0),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [colors.accentPrimary, colors.accentSecondary],
+        child: TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+          tween: Tween<double>(begin: 0, end: progress.clamp(0.0, 1.0)),
+          builder: (context, animatedProgress, child) {
+            return FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: animatedProgress,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [colors.accentPrimary, colors.accentSecondary],
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
