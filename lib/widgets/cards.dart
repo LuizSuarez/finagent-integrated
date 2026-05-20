@@ -150,32 +150,29 @@ class InsightCard extends StatelessWidget {
               ),
             ),
             if (!isCompact) ...[
-              const SizedBox(height: 8),
-              Text(
-                insight.displayImpactText,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTheme.bodySm(context, colors.textSecondary),
-              ),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Source: ${insight.displaySource}',
-                    style: AppTheme.caption(context, colors.textSecondary.withOpacity(0.7)),
-                  ),
                   Row(
                     children: [
+                      Icon(Icons.hub_outlined, size: 14, color: colors.textSecondary.withOpacity(0.7)),
+                      const SizedBox(width: 4),
                       Text(
-                        'Read Analysis',
-                        style: AppTheme.caption(context, colors.accentPrimary).copyWith(
+                        insight.displaySource,
+                        style: AppTheme.caption(context, colors.textSecondary.withOpacity(0.7)).copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.arrow_forward, color: colors.accentPrimary, size: 12),
                     ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: colors.accentPrimary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.arrow_forward, color: colors.accentPrimary, size: 14),
                   ),
                 ],
               ),

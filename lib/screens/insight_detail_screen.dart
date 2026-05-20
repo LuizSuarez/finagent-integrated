@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../widgets/buttons.dart';
 import '../widgets/cards.dart';
 import '../widgets/feedback.dart';
+import '../widgets/charts.dart';
 import 'action_simulation_screen.dart';
 
 class InsightDetailScreen extends StatelessWidget {
@@ -47,6 +48,15 @@ class InsightDetailScreen extends StatelessWidget {
       }
     }
 
+    double getRiskScore(String sev) {
+      switch (sev.toLowerCase()) {
+        case 'critical': return 92.0;
+        case 'high': return 75.0;
+        case 'medium': return 45.0;
+        case 'low': default: return 15.0;
+      }
+    }
+
     return Scaffold(
       backgroundColor: colors.bgPrimary,
       appBar: AppBar(
@@ -74,38 +84,64 @@ class InsightDetailScreen extends StatelessWidget {
               children: [
                 // Section: Insight Header
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: colors.bgElevated,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: colors.borderColor),
-                      ),
-                      child: Text(
-                        insight.displayDomain.toUpperCase(),
-                        style: AppTheme.caption(context, colors.accentPrimary).copyWith(fontWeight: FontWeight.bold),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: colors.bgElevated,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: colors.borderColor),
+                                ),
+                                child: Text(
+                                  insight.displayDomain.toUpperCase(),
+                                  style: AppTheme.caption(context, colors.accentPrimary).copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: getSeverityColor().withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: getSeverityColor().withOpacity(0.4)),
+                                ),
+                                child: Text(
+                                  '${insight.displaySeverity.toUpperCase()} RISK',
+                                  style: AppTheme.caption(context, getSeverityColor()).copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            insight.displayTitle,
+                            style: AppTheme.headingLg(context, colors.textPrimary),
+                          ),
+                        ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: getSeverityColor().withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: getSeverityColor().withOpacity(0.4)),
-                      ),
-                      child: Text(
-                        '${insight.displaySeverity.toUpperCase()} RISK',
-                        style: AppTheme.caption(context, getSeverityColor()).copyWith(fontWeight: FontWeight.bold),
+                    const SizedBox(width: 8),
+                    // Visual Risk Gauge (scaled down)
+                    SizedBox(
+                      width: 120,
+                      height: 100,
+                      child: Transform.scale(
+                        scale: 0.65,
+                        alignment: Alignment.topRight,
+                        child: RiskGauge(
+                          riskScore: getRiskScore(insight.displaySeverity),
+                          riskLabel: 'RISK',
+                        ),
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  insight.displayTitle,
-                  style: AppTheme.headingLg(context, colors.textPrimary),
                 ),
                 const SizedBox(height: 8),
 
@@ -135,8 +171,12 @@ class InsightDetailScreen extends StatelessWidget {
                     letterSpacing: 1.0,
                   ),
                 ),
-                const SizedBox(height: 8),
-                ...insight.displayFacts.map((fact) => _buildFactItem(context, fact)),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: insight.displayFacts.map((fact) => _buildFactItem(context, fact)).toList(),
+                ),
                 const SizedBox(height: 24),
 
                 // Section: Impact Analysis Card
@@ -148,26 +188,27 @@ class InsightDetailScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                CustomCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.analytics_outlined, color: colors.accentPrimary, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Why This Matters',
-                            style: AppTheme.bodyMd(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: CustomCard(
+                    padding: EdgeInsets.zero,
+                    child: ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      leading: Icon(Icons.analytics_outlined, color: colors.accentPrimary),
+                      title: Text(
+                        'View Detailed Analysis',
+                        style: AppTheme.bodyMd(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+                          child: Text(
+                            insight.displayImpactText,
+                            style: AppTheme.bodySm(context, colors.textSecondary).copyWith(height: 1.5),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        insight.displayImpactText,
-                        style: AppTheme.bodySm(context, colors.textSecondary).copyWith(height: 1.5),
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -181,8 +222,18 @@ class InsightDetailScreen extends StatelessWidget {
                       letterSpacing: 1.0,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  ...insight.displayImplications.map((imp) => _buildImplicationRow(context, imp)),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 110,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: insight.displayImplications.length,
+                      separatorBuilder: (context, index) => const SizedBox(width: 12),
+                      itemBuilder: (context, index) {
+                        return _buildImplicationRow(context, insight.displayImplications[index]);
+                      },
+                    ),
+                  ),
                   const SizedBox(height: 24),
                 ],
 
@@ -265,21 +316,25 @@ class InsightDetailScreen extends StatelessWidget {
 
   Widget _buildFactItem(BuildContext context, String fact) {
     final colors = AppTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = (screenWidth - 32 - 12) / 2; // padding 16*2, spacing 12
+
+    return Container(
+      width: cardWidth,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.bgElevated,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors.borderColor),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Icon(Icons.check_circle_outline, color: colors.accentPrimary, size: 16),
+          const SizedBox(height: 8),
           Text(
-            '•',
-            style: TextStyle(color: colors.accentPrimary, fontSize: 18, height: 1.1),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              fact,
-              style: AppTheme.bodySm(context, colors.textPrimary).copyWith(height: 1.3),
-            ),
+            fact,
+            style: AppTheme.caption(context, colors.textPrimary).copyWith(height: 1.3),
           ),
         ],
       ),
@@ -308,17 +363,25 @@ class InsightDetailScreen extends StatelessWidget {
       }
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.bgSurface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors.borderColor),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(getIcon(), color: colors.accentSecondary, size: 18),
-          const SizedBox(width: 12),
+          Icon(getIcon(), color: colors.accentSecondary, size: 20),
+          const SizedBox(height: 10),
           Expanded(
             child: Text(
               item.displayText,
-              style: AppTheme.bodySm(context, colors.textPrimary),
+              style: AppTheme.caption(context, colors.textPrimary),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

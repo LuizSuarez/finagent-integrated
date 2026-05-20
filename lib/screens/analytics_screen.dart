@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
@@ -143,68 +144,31 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             _buildSummaryStatsRow(context, totalRuns, insightsCount, simulatedCount),
             const SizedBox(height: 24),
 
-            // Section: Risk Trend Sparkline
-            Text(
-              'SYSTEM SYSTEM RISK METRICS OVER TIME',
-              style: AppTheme.caption(context, colors.textSecondary).copyWith(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
-              ),
-            ),
-            const SizedBox(height: 10),
-            _buildRiskTrendSection(context, apiState),
-            const SizedBox(height: 24),
+            // Section: Line Chart (Risk Trend)
+            _buildLineChart(colors, apiState.portfolioState.displayRiskScore),
+            const SizedBox(height: 16),
 
-            // Section: charts breakdown side by side
+            // Section: Bar & Pie Charts
             LayoutBuilder(
               builder: (context, constraints) {
                 final isNarrow = constraints.maxWidth < 550;
-                final chart1 = Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'INSIGHTS BY DOMAIN',
-                      style: AppTheme.caption(context, colors.textSecondary).copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    CustomCard(
-                      padding: const EdgeInsets.all(12),
-                      child: SimpleBarChart(data: domainBreakdown),
-                    ),
-                  ],
-                );
+                final bar = _buildBarChart(colors, domainBreakdown);
+                final pie = _buildPieChart(colors, outcomeBreakdown);
                 
-                final chart2 = Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'ACTIONS SIMULATED',
-                      style: AppTheme.caption(context, colors.textSecondary).copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    CustomCard(
-                      padding: const EdgeInsets.all(12),
-                      child: SimpleBarChart(data: outcomeBreakdown),
-                    ),
-                  ],
-                );
-
                 if (isNarrow) {
                   return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      chart1,
+                      bar,
                       const SizedBox(height: 16),
-                      chart2,
+                      pie,
                     ],
                   );
                 } else {
                   return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: chart1),
+                      Expanded(child: bar),
                       const SizedBox(width: 12),
-                      Expanded(child: chart2),
+                      Expanded(child: pie),
                     ],
                   );
                 }
@@ -419,6 +383,161 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             timestamp: act.simulatedAt ?? DateTime.now(),
           );
         }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildLineChart(AppThemeColors colors, double currentScore) {
+    return CustomCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('RISK SCORE TREND', style: AppTheme.caption(context, colors.textSecondary).copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 180,
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: false),
+                titlesData: FlTitlesData(show: false),
+                borderData: FlBorderData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: [
+                      const FlSpot(0, 42), const FlSpot(1, 38), const FlSpot(2, 36), 
+                      const FlSpot(3, 39), const FlSpot(4, 35), FlSpot(5, currentScore)
+                    ],
+                    isCurved: true,
+                    color: colors.accentWarning,
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: colors.accentWarning.withOpacity(0.1),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBarChart(AppThemeColors colors, Map<String, int> data) {
+    if (data.isEmpty) return const SizedBox();
+    
+    List<BarChartGroupData> barGroups = [];
+    int i = 0;
+    for (var entry in data.entries) {
+      barGroups.add(
+        BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: entry.value.toDouble(),
+              color: colors.accentPrimary,
+              width: 16,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ],
+        )
+      );
+      i++;
+    }
+
+    return CustomCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('INSIGHTS BY DOMAIN', style: AppTheme.caption(context, colors.textSecondary).copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 180,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        if (value.toInt() >= data.keys.length || value.toInt() < 0) return const SizedBox();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            data.keys.elementAt(value.toInt()).substring(0, 3).toUpperCase(),
+                            style: AppTheme.caption(context, colors.textSecondary).copyWith(fontSize: 9),
+                          ),
+                        );
+                      },
+                      reservedSize: 28,
+                    ),
+                  ),
+                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                gridData: FlGridData(show: false),
+                barGroups: barGroups,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPieChart(AppThemeColors colors, Map<String, int> data) {
+    if (data.isEmpty) return const SizedBox();
+    
+    final sliceColors = [colors.accentSuccess, colors.accentWarning, colors.accentSecondary];
+    
+    List<PieChartSectionData> sections = [];
+    int i = 0;
+    for (var entry in data.entries) {
+      if (entry.value > 0) {
+        sections.add(
+          PieChartSectionData(
+            color: sliceColors[i % sliceColors.length],
+            value: entry.value.toDouble(),
+            title: '${entry.value}',
+            radius: 40,
+            titleStyle: AppTheme.monoSm(context, Colors.white).copyWith(fontWeight: FontWeight.bold),
+          )
+        );
+        i++;
+      }
+    }
+
+    if (sections.isEmpty) {
+      sections.add(PieChartSectionData(color: colors.borderColor, value: 1, title: '0', radius: 40));
+    }
+
+    return CustomCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('ACTIONS SIMULATED', style: AppTheme.caption(context, colors.textSecondary).copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 180,
+            child: PieChart(
+              PieChartData(
+                sectionsSpace: 2,
+                centerSpaceRadius: 30,
+                sections: sections,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
