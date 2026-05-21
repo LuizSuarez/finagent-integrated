@@ -120,9 +120,15 @@ class ApiService extends ChangeNotifier {
     }
   }
 
+  Timer? _marketDataTimer;
+  Map<String, double> _baselineValues = {};
+
   // Constructor
   ApiService() {
     _fetchPortfolio();
+    _marketDataTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _fetchLivePrices();
+    });
   }
 
   Future<void> _fetchPortfolio() async {
@@ -178,10 +184,79 @@ class ApiService extends ChangeNotifier {
           activeCampaigns: [],
           pricingTable: {},
         );
+
+        if (_baselineValues.isEmpty) {
+          for (var asset in assets) {
+            _baselineValues[asset.name ?? ''] = asset.value ?? 0.0;
+          }
+        }
+        
         notifyListeners();
       }
     } catch (e) {
-      debugPrint("Failed fetching portfolio: \$e");
+      debugPrint("Failed fetching portfolio: $e");
+    }
+  }
+
+  Future<void> _fetchLivePrices() async {
+    try {
+      final res = await http.get(Uri.parse("${_settings.backendUrl}/api/v1/market/prices"));
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+        final prices = body['prices'] as Map<String, dynamic>?;
+        if (prices != null && _portfolioState.assets != null && _portfolioState.assets!.isNotEmpty) {
+          
+          double newTotalValue = 0;
+          List<AssetRow> updatedAssets = [];
+
+          for (var asset in _portfolioState.assets!) {
+            final name = asset.name ?? '';
+            final baselineValue = _baselineValues[name] ?? (asset.value ?? 0.0);
+            
+            // Apply real-time market percentage change
+            double pctChange = (prices['${name}_change'] as num?)?.toDouble() ?? 0.0;
+            
+            // Add tiny micro-fluctuation to ensure visual ticking for demo (±0.01%)
+            if (name != 'CASH') {
+               final noise = (DateTime.now().millisecondsSinceEpoch % 200 - 100) / 10000.0;
+               pctChange += noise;
+            }
+
+            final newValue = baselineValue * (1.0 + (pctChange / 100.0));
+            newTotalValue += newValue;
+
+            updatedAssets.add(AssetRow(
+              name: name,
+              allocationPercent: asset.allocationPercent,
+              value: newValue,
+              riskLevel: asset.riskLevel,
+            ));
+          }
+
+          if (newTotalValue > 0) {
+            updatedAssets = updatedAssets.map((a) => AssetRow(
+              name: a.name,
+              allocationPercent: ((a.value ?? 0.0) / newTotalValue) * 100,
+              value: a.value,
+              riskLevel: a.riskLevel,
+            )).toList();
+          }
+
+          _portfolioState = PortfolioState(
+            totalValue: newTotalValue,
+            riskScore: _portfolioState.riskScore,
+            riskLevel: _portfolioState.riskLevel,
+            riskExplanation: _portfolioState.riskExplanation,
+            assets: updatedAssets,
+            activeCampaigns: _portfolioState.activeCampaigns,
+            pricingTable: _portfolioState.pricingTable,
+          );
+          
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      // Ignore network errors on polling
     }
   }
 
@@ -442,6 +517,7 @@ class ApiService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _marketDataTimer?.cancel();
     _channel?.sink.close();
     _simulationTimer?.cancel();
     super.dispose();
