@@ -1,0 +1,23 @@
+{
+  "snapshot_id": "default_001",
+  "risk_level": "LOW",
+  "risk_score": 0.25,
+  "holdings": {
+    "AAPL": {
+      "allocation_pct": 30.0,
+      "value": 30000.0
+    },
+    "FDX": {
+      "allocation_pct": 35.0,
+      "value": 35000.0
+    },
+    "VTI": {
+      "allocation_pct": 20.0,
+      "value": 20000.0
+    },
+    "CASH": {
+      "allocation_pct": 15.0,
+      "value": 15000.0
+    }
+  }
+}

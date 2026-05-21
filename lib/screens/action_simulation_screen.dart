@@ -2,16 +2,13 @@ import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme.dart';
 import '../models/action_item.dart';
 import '../services/api_service.dart';
 import '../widgets/buttons.dart';
-import '../widgets/feedback.dart';
 import 'main_shell.dart';
 
-// ============================================================
-// ACTION SIMULATION SCREEN — Trade Execution Design
-// ============================================================
 class ActionSimulationScreen extends StatefulWidget {
   final ActionItem action;
 
@@ -28,7 +25,7 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
     if (_logsScrollController.hasClients) {
       _logsScrollController.animateTo(
         _logsScrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 150),
+        duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
       );
     }
@@ -61,10 +58,16 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
     return Scaffold(
       backgroundColor: colors.bgPrimary,
       appBar: AppBar(
-        backgroundColor: colors.bgSurface,
+        backgroundColor: colors.bgPrimary.withOpacity(0.7),
         elevation: 0,
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(color: Colors.transparent),
+          ),
+        ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.textPrimary, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: colors.textPrimary, size: 18),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Column(
@@ -73,20 +76,21 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
             Text(
               'ACTION SANDBOX',
               style: AppTheme.headingMd(context, colors.textPrimary)
-                  .copyWith(letterSpacing: 1.2, fontSize: 14),
+                  .copyWith(letterSpacing: 1.2, fontSize: 13, fontWeight: FontWeight.bold),
             ),
             Text(
               updatedAction.displayType.toUpperCase(),
               style: AppTheme.caption(context, colors.accentPrimary)
-                  .copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                  .copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.0, fontSize: 9),
             ),
           ],
         ),
         actions: [
           // Live status badge
           Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isComplete
                   ? colors.accentSuccess.withOpacity(0.12)
@@ -121,7 +125,7 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
                   isRunning
                       ? 'EXECUTING...'
                       : isComplete
-                          ? 'COMPLETE ✓'
+                          ? 'COMPLETE'
                           : 'PENDING',
                   style: AppTheme.caption(
                     context,
@@ -130,7 +134,7 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
                         : isRunning
                             ? colors.accentWarning
                             : colors.textSecondary,
-                  ).copyWith(fontWeight: FontWeight.bold),
+                  ).copyWith(fontWeight: FontWeight.bold, fontSize: 9),
                 ),
               ],
             ),
@@ -143,25 +147,33 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ─── Section 1: Action Header ───────────────────
-            _buildActionHeader(context, updatedAction, colors),
+            _buildActionHeader(context, updatedAction, colors)
+                .animate()
+                .fadeIn(duration: 400.ms)
+                .slideY(begin: 0.1, end: 0),
             const SizedBox(height: 20),
 
             // ─── Section 2: Portfolio Rebalancing Transition ──
             _buildSectionLabel(context, 'PORTFOLIO REBALANCING TRANSITION', colors),
             const SizedBox(height: 12),
-            _buildBeforeAfterCharts(context, isComplete, colors),
+            _buildBeforeAfterCharts(context, isComplete, colors)
+                .animate()
+                .fadeIn(duration: 450.ms, delay: 100.ms)
+                .slideY(begin: 0.08, end: 0),
             const SizedBox(height: 24),
 
             // ─── Section 3: Execute Button or Simulation Logs ─
             if (!isRunning && !isComplete) ...[
-              _buildSandboxNotice(context, updatedAction, colors),
+              _buildSandboxNotice(context, updatedAction, colors)
+                  .animate()
+                  .fadeIn(duration: 350.ms),
               const SizedBox(height: 16),
               PrimaryButton(
                 text: 'EXECUTE SIMULATION',
                 width: double.infinity,
                 icon: Icons.rocket_launch_outlined,
                 onPressed: () => apiState.executeActionSimulation(updatedAction),
-              ),
+              ).animate().fadeIn(duration: 400.ms).scaleY(begin: 0.9, end: 1),
               const SizedBox(height: 24),
             ],
 
@@ -175,11 +187,15 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
             if (isComplete || isRunning) ...[
               _buildSectionLabel(context, 'RISK PROFILE SCORE PROGRESSION', colors),
               const SizedBox(height: 12),
-              _buildRiskProgressCard(context, isComplete, colors),
+              _buildRiskProgressCard(context, isComplete, colors)
+                  .animate()
+                  .fadeIn(duration: 400.ms),
               const SizedBox(height: 24),
 
               // ─── Section 6: P&L Summary ─────────────────────
-              _buildPnLCard(context, updatedAction, colors),
+              _buildPnLCard(context, updatedAction, colors)
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 100.ms),
               const SizedBox(height: 24),
             ],
 
@@ -209,7 +225,7 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
                     ),
                   ),
                 ],
-              ),
+              ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
             ],
           ],
         ),
@@ -217,9 +233,6 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
     );
   }
 
-  // ──────────────────────────────────────────────────────────
-  // Helper: section label
-  // ──────────────────────────────────────────────────────────
   Widget _buildSectionLabel(BuildContext context, String label, AppThemeColors colors) {
     return Text(
       label,
@@ -230,21 +243,18 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
     );
   }
 
-  // ──────────────────────────────────────────────────────────
-  // Action Header
-  // ──────────────────────────────────────────────────────────
   Widget _buildActionHeader(BuildContext context, ActionItem action, AppThemeColors colors) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colors.bgSurface.withOpacity(0.6),
+            color: colors.bgSurface.withOpacity(0.4),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: colors.borderColor.withOpacity(0.6)),
+            border: Border.all(color: colors.borderColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,7 +269,9 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
               const SizedBox(height: 12),
               Text(
                 action.displayTitle,
-                style: AppTheme.headingLg(context, colors.textPrimary),
+                style: AppTheme.headingLg(context, colors.textPrimary).copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -298,195 +310,178 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
     );
   }
 
-  // ──────────────────────────────────────────────────────────
-  // Before / After Pie Charts
-  // ──────────────────────────────────────────────────────────
   Widget _buildBeforeAfterCharts(BuildContext context, bool isComplete, AppThemeColors colors) {
-    final beforeState = widget.action.displayBeforeState;
-    final afterState = widget.action.displayAfterState;
+    // Determine allocation data from action
+    final beforeData = widget.action.displayBeforeState;
+    final afterData = widget.action.displayAfterState;
 
-    // Convert before/after state maps to simple display values
-    final beforeEntries = beforeState.entries.take(3).toList();
-    final afterEntries = afterState.entries.take(3).toList();
-
-    // Use 3 fixed accent colors for pie slices
-    const sliceColors = [Color(0xFFFF4757), Color(0xFF00FF88), Color(0xFF00D4FF)];
-
-    List<PieChartSectionData> makeSections(List<MapEntry<String, String>> entries) {
-      // Generate rough percentage splits
-      final count = entries.length.clamp(1, 3);
-      final splits = count == 1
-          ? [100.0]
-          : count == 2
-              ? [40.0, 60.0]
-              : [35.0, 25.0, 40.0];
-
-      return List.generate(count, (i) {
-        return PieChartSectionData(
-          color: sliceColors[i % sliceColors.length],
-          value: splits[i],
-          title: '${splits[i].toInt()}%',
-          radius: 20,
-          titleStyle: AppTheme.monoSm(context, Colors.white).copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: 8,
+    // Build before sections — always show as single red ring (100% = before state)
+    List<PieChartSectionData> buildBeforeSections() {
+      if (beforeData.isEmpty) {
+        return [
+          PieChartSectionData(
+            color: const Color(0xFFFF6B7A),
+            value: 100,
+            title: '100%',
+            radius: 32,
+            titleStyle: AppTheme.bodyMd(context, Colors.white)
+                .copyWith(fontWeight: FontWeight.bold, fontSize: 13),
           ),
-        );
-      });
+        ];
+      }
+      final entries = beforeData.entries.toList();
+      final sliceColors = [
+        const Color(0xFFFF6B7A),
+        const Color(0xFFFF9A9A),
+        const Color(0xFFFFB3B3),
+      ];
+      double perSlice = 100.0 / entries.length;
+      return List.generate(entries.length, (i) => PieChartSectionData(
+        color: sliceColors[i % sliceColors.length],
+        value: perSlice,
+        title: '${perSlice.toInt()}%',
+        radius: 32,
+        titleStyle: AppTheme.bodySm(context, Colors.white)
+            .copyWith(fontWeight: FontWeight.bold, fontSize: 11),
+      ));
+    }
+
+    List<PieChartSectionData> buildAfterSections() {
+      if (!isComplete || afterData.isEmpty) {
+        return [
+          PieChartSectionData(
+            color: const Color(0xFFFF6B7A),
+            value: 100,
+            title: '100%',
+            radius: 32,
+            titleStyle: AppTheme.bodyMd(context, Colors.white)
+                .copyWith(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ];
+      }
+      final entries = afterData.entries.toList();
+      final sliceColors = [
+        const Color(0xFF00D4AA),
+        const Color(0xFF00B391),
+        const Color(0xFF009978),
+      ];
+      double perSlice = 100.0 / entries.length;
+      return List.generate(entries.length, (i) => PieChartSectionData(
+        color: sliceColors[i % sliceColors.length],
+        value: perSlice,
+        title: '${perSlice.toInt()}%',
+        radius: 32,
+        titleStyle: AppTheme.bodySm(context, Colors.black)
+            .copyWith(fontWeight: FontWeight.bold, fontSize: 11),
+      ));
+    }
+
+    Widget _donutCard({
+      required String label,
+      required Color labelColor,
+      required Color borderColor,
+      required List<PieChartSectionData> sections,
+      required String statusText,
+    }) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: colors.bgSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor, width: 1.5),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: AppTheme.caption(context, labelColor).copyWith(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 120,
+              child: PieChart(
+                PieChartData(
+                  sectionsSpace: 2,
+                  centerSpaceRadius: 38,
+                  startDegreeOffset: -90,
+                  sections: sections,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: labelColor,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  statusText,
+                  style: AppTheme.caption(context, colors.textSecondary)
+                      .copyWith(fontSize: 10),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
     }
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // BEFORE card
         Expanded(
-          child: _glassBox(
-            context,
-            colors,
-            borderHighlight: colors.accentDanger.withOpacity(0.4),
-            child: Column(
-              children: [
-                Text(
-                  'BEFORE',
-                  style: AppTheme.caption(context, colors.accentDanger)
-                      .copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 90,
-                  child: PieChart(
-                    PieChartData(
-                      sectionsSpace: 2,
-                      centerSpaceRadius: 22,
-                      sections: makeSections(beforeEntries),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ...beforeEntries.asMap().entries.map((e) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6, height: 6,
-                          decoration: BoxDecoration(
-                            color: sliceColors[e.key % sliceColors.length],
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            '${e.value.key}: ${e.value.value}',
-                            style: AppTheme.caption(context, colors.textSecondary)
-                                .copyWith(fontSize: 9),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
+          child: _donutCard(
+            label: 'BEFORE',
+            labelColor: const Color(0xFFFF6B7A),
+            borderColor: const Color(0xFFFF6B7A).withOpacity(0.5),
+            sections: buildBeforeSections(),
+            statusText: 'Status: Inactive',
           ),
         ),
 
-        // Arrow
+        // Arrow connector
         Padding(
-          padding: const EdgeInsets.only(top: 55, left: 6, right: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: colors.accentPrimary.withOpacity(0.1),
+              color: colors.accentPrimary.withOpacity(0.12),
               shape: BoxShape.circle,
+              border: Border.all(
+                  color: colors.accentPrimary.withOpacity(0.35), width: 1),
             ),
-            child: Icon(Icons.arrow_forward_rounded, color: colors.accentPrimary, size: 14),
+            child: Icon(Icons.arrow_forward_rounded,
+                color: colors.accentPrimary, size: 16),
           ),
         ),
 
         // AFTER card
         Expanded(
-          child: _glassBox(
-            context,
-            colors,
-            borderHighlight: isComplete ? colors.accentSuccess.withOpacity(0.4) : null,
-            child: Column(
-              children: [
-                Text(
-                  'AFTER',
-                  style: AppTheme.caption(
-                    context,
-                    isComplete ? colors.accentSuccess : colors.textSecondary,
-                  ).copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 90,
-                  child: isComplete
-                      ? PieChart(
-                          PieChartData(
-                            sectionsSpace: 2,
-                            centerSpaceRadius: 22,
-                            sections: makeSections(afterEntries),
-                          ),
-                        )
-                      : Center(
-                          child: Icon(
-                            Icons.lock_clock_outlined,
-                            color: colors.textSecondary.withOpacity(0.4),
-                            size: 32,
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 8),
-                if (isComplete) ...[
-                  ...afterEntries.asMap().entries.map((e) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6, height: 6,
-                            decoration: BoxDecoration(
-                              color: sliceColors[e.key % sliceColors.length],
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Flexible(
-                            child: Text(
-                              '${e.value.key}: ${e.value.value}',
-                              style: AppTheme.caption(context, colors.textSecondary)
-                                  .copyWith(fontSize: 9),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ] else
-                  Text(
-                    'Run simulation\nto reveal',
-                    style: AppTheme.caption(context, colors.textSecondary)
-                        .copyWith(fontSize: 9),
-                    textAlign: TextAlign.center,
-                  ),
-              ],
-            ),
+          child: _donutCard(
+            label: 'AFTER',
+            labelColor: isComplete ? const Color(0xFF00D4AA) : colors.textSecondary,
+            borderColor: isComplete
+                ? const Color(0xFF00D4AA).withOpacity(0.5)
+                : colors.borderColor,
+            sections: buildAfterSections(),
+            statusText: isComplete ? 'Status: Modified' : 'Status: Pending',
           ),
         ),
       ],
     );
   }
 
-  // ──────────────────────────────────────────────────────────
-  // Sandbox Notice
-  // ──────────────────────────────────────────────────────────
   Widget _buildSandboxNotice(BuildContext context, ActionItem action, AppThemeColors colors) {
     return _glassBox(
       context,
@@ -496,10 +491,11 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: colors.accentPrimary.withOpacity(0.1),
+              color: colors.accentPrimary.withOpacity(0.12),
               shape: BoxShape.circle,
+              border: Border.all(color: colors.accentPrimary.withOpacity(0.3)),
             ),
-            child: Icon(Icons.shield_outlined, color: colors.accentPrimary, size: 18),
+            child: Icon(Icons.shield_outlined, color: colors.accentPrimary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -513,7 +509,7 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Prod DBs isolated. Virtual sim only.',
+                  'Production DBs isolated. Virtual execution only.',
                   style: AppTheme.caption(context, colors.textSecondary),
                 ),
               ],
@@ -524,34 +520,30 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
     );
   }
 
-  // ──────────────────────────────────────────────────────────
-  // Terminal Console (Audit Log)
-  // ──────────────────────────────────────────────────────────
   Widget _buildTerminalConsole(BuildContext context, ApiService apiState, AppThemeColors colors) {
     final logs = apiState.simulationLogs;
     final isRunning = apiState.isSimulationRunning;
 
-    // Static audit lines (always shown)
     final staticLines = [
-      _TerminalLine(time: '11:01:23', side: 'SELL', sideColor: const Color(0xFFFF4757),
+      _TerminalLine(time: '11:01:23', side: 'SELL', sideColor: colors.accentDanger,
           asset: widget.action.displayTitle, qty: 'Qty: A', price: '@ market', value: '-Δ'),
-      _TerminalLine(time: '11:02:05', side: 'BUY ', sideColor: const Color(0xFF00FF88),
+      _TerminalLine(time: '11:02:05', side: 'BUY ', sideColor: colors.accentSuccess,
           asset: widget.action.displayTargetSystem, qty: 'Qty: B', price: '@ market', value: '+Δ'),
     ];
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(12),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: const Color(0xFF070B13).withOpacity(0.95),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: colors.accentSuccess.withOpacity(0.2), width: 1.5),
+            color: const Color(0x99070B13),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colors.accentSuccess.withOpacity(0.3), width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: colors.accentPrimary.withOpacity(0.08),
+                color: colors.glowColor.withOpacity(0.1),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
@@ -561,29 +553,25 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Terminal header row
               Row(
                 children: [
                   _PulsingDot(color: colors.accentSuccess),
                   const SizedBox(width: 8),
                   Text(
-                    'TERMINAL — ORDER EXECUTION ENGINE',
+                    'TERMINAL — ORDER SIMULATION SYSTEM',
                     style: AppTheme.monoSm(context, colors.accentSuccess)
                         .copyWith(fontWeight: FontWeight.bold, fontSize: 10),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
 
-              // Static trade lines
               ...staticLines.map((line) => _buildTerminalLine(context, line)),
               const SizedBox(height: 8),
 
-              // Divider
-              Divider(color: Colors.white.withOpacity(0.08)),
+              Divider(color: colors.borderColor.withOpacity(0.2)),
               const SizedBox(height: 6),
 
-              // Live simulation logs (if available)
               if (logs.isNotEmpty)
                 SizedBox(
                   height: 90,
@@ -592,22 +580,21 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
                     itemCount: logs.length,
                     itemBuilder: (context, index) {
                       final log = logs[index];
-                      Color logColor = Colors.white38;
+                      Color logColor = colors.textSecondary;
                       if (log.contains('[SIMULATOR]')) logColor = colors.accentPrimary;
                       if (log.contains('[OK]')) logColor = colors.accentSuccess;
-                      return _AnimatedLog(log: log, logColor: logColor, context: context);
+                      return _AnimatedLog(log: log, logColor: logColor);
                     },
                   ),
                 )
               else
                 Text(
                   '>> ALL ORDERS SETTLED VIA LIQUIDITY POOL PORT A.\n>> MARGIN RATIO ADEQUATE. EXPOSURE REDUCTION CONFIRMED.',
-                  style: AppTheme.monoSm(context, Colors.grey.shade600).copyWith(fontSize: 9),
+                  style: AppTheme.monoSm(context, colors.textSecondary.withOpacity(0.6)).copyWith(fontSize: 10, height: 1.4),
                 ),
 
-              // Progress bar if running
               if (isRunning) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
@@ -626,12 +613,13 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
   }
 
   Widget _buildTerminalLine(BuildContext context, _TerminalLine line) {
+    final colors = AppTheme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
           Text('[${line.time}]',
-              style: AppTheme.monoSm(context, Colors.white38).copyWith(fontSize: 10)),
+              style: AppTheme.monoSm(context, colors.textSecondary.withOpacity(0.5)).copyWith(fontSize: 10)),
           const SizedBox(width: 8),
           Text(line.side,
               style: AppTheme.monoSm(context, line.sideColor)
@@ -640,12 +628,12 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
           Expanded(
               child: Text(line.asset,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTheme.monoSm(context, Colors.white).copyWith(fontSize: 10))),
+                  style: AppTheme.monoSm(context, colors.textPrimary).copyWith(fontSize: 10))),
           Text(line.qty,
-              style: AppTheme.monoSm(context, Colors.white54).copyWith(fontSize: 10)),
+              style: AppTheme.monoSm(context, colors.textSecondary).copyWith(fontSize: 10)),
           const SizedBox(width: 8),
           Text(line.price,
-              style: AppTheme.monoSm(context, Colors.white54).copyWith(fontSize: 10)),
+              style: AppTheme.monoSm(context, colors.textSecondary).copyWith(fontSize: 10)),
           const SizedBox(width: 8),
           Text(line.value,
               style: AppTheme.monoSm(context, line.sideColor)
@@ -655,9 +643,6 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
     );
   }
 
-  // ──────────────────────────────────────────────────────────
-  // Risk Score Progression
-  // ──────────────────────────────────────────────────────────
   Widget _buildRiskProgressCard(BuildContext context, bool isComplete, AppThemeColors colors) {
     return _glassBox(
       context,
@@ -711,9 +696,6 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
     );
   }
 
-  // ──────────────────────────────────────────────────────────
-  // P&L Summary Metrics
-  // ──────────────────────────────────────────────────────────
   Widget _buildPnLCard(BuildContext context, ActionItem action, AppThemeColors colors) {
     final isPos = action.displayIsPositiveMetric;
     final metricColor = isPos ? colors.accentSuccess : colors.accentDanger;
@@ -754,8 +736,8 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
                 color: isPos
-                    ? colors.accentSuccess.withOpacity(0.3)
-                    : colors.accentWarning.withOpacity(0.3),
+                  ? colors.accentSuccess.withOpacity(0.3)
+                  : colors.accentWarning.withOpacity(0.3),
               ),
             ),
             child: Row(
@@ -769,8 +751,8 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
                 Expanded(
                   child: Text(
                     isPos
-                        ? 'Simulated. Positive Delta.'
-                        : 'Simulated. High Risk Warning.',
+                        ? 'Simulated execution verified. Positive outlook delta.'
+                        : 'Simulated execution complete. High Risk exposure flagged.',
                     style: AppTheme.caption(context, colors.textSecondary),
                   ),
                 ),
@@ -809,9 +791,6 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
     return Container(width: 1, height: 40, color: colors.borderColor);
   }
 
-  // ──────────────────────────────────────────────────────────
-  // Shared glass box container
-  // ──────────────────────────────────────────────────────────
   Widget _glassBox(BuildContext context, AppThemeColors colors,
       {required Widget child, Color? borderHighlight}) {
     return ClipRRect(
@@ -822,10 +801,10 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: colors.bgSurface.withOpacity(0.55),
+            color: colors.bgSurface.withOpacity(0.4),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: borderHighlight ?? colors.borderColor.withOpacity(0.5),
+              color: borderHighlight ?? colors.borderColor,
               width: 1.2,
             ),
           ),
@@ -835,10 +814,6 @@ class _ActionSimulationScreenState extends State<ActionSimulationScreen> {
     );
   }
 }
-
-// ──────────────────────────────────────────────────────────
-// Supporting Widgets
-// ──────────────────────────────────────────────────────────
 
 class _PulsingDot extends StatefulWidget {
   final Color color;
@@ -913,26 +888,24 @@ class _TerminalLine {
 class _AnimatedLog extends StatelessWidget {
   final String log;
   final Color logColor;
-  final BuildContext context;
 
-  const _AnimatedLog(
-      {required this.log, required this.logColor, required this.context});
+  const _AnimatedLog({required this.log, required this.logColor});
 
   @override
-  Widget build(BuildContext ctx) {
+  Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 250),
       tween: Tween<double>(begin: 0.0, end: 1.0),
-      builder: (_, value, child) => Opacity(
+      builder: (context, value, child) => Opacity(
         opacity: value,
         child: Transform.translate(
             offset: Offset(0, 6 * (1 - value)), child: child),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 1.5),
+        padding: const EdgeInsets.symmetric(vertical: 2),
         child: Text(
           log,
-          style: AppTheme.monoSm(ctx, logColor).copyWith(fontSize: 10),
+          style: AppTheme.monoSm(context, logColor).copyWith(fontSize: 10, height: 1.3),
         ),
       ),
     );

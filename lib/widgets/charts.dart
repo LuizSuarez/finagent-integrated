@@ -13,10 +13,11 @@ class PortfolioPieChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppTheme.of(context);
     
-    // Fallback colors for slices
+    // Fallback colors for slices - premium high-fidelity palette
     final sliceColors = [
       colors.accentPrimary,
       colors.accentSecondary,
+      colors.accentSuccess,
       colors.accentWarning,
       colors.accentDanger,
     ];
@@ -34,21 +35,20 @@ class PortfolioPieChart extends StatelessWidget {
       height: 250,
       child: PieChart(
         PieChartData(
-          sectionsSpace: 4,
-          centerSpaceRadius: 50,
+          sectionsSpace: 6,
+          centerSpaceRadius: 55,
           startDegreeOffset: -90,
           sections: List.generate(assets.length, (index) {
             final asset = assets[index];
             final color = sliceColors[index % sliceColors.length];
-            final textColor = ThemeData.estimateBrightnessForColor(color) == Brightness.dark
-                ? Colors.white
-                : Colors.black87;
+            final isDarkText = ThemeData.estimateBrightnessForColor(color) == Brightness.light;
+            final textColor = isDarkText ? const Color(0xFF0A0E1A) : Colors.white;
 
             return PieChartSectionData(
               color: color,
               value: asset.displayAllocationPercent,
               title: '${asset.displayAllocationPercent.toStringAsFixed(0)}%',
-              radius: 50,
+              radius: 45,
               titleStyle: AppTheme.caption(context, textColor).copyWith(
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
@@ -85,10 +85,10 @@ class _RiskGaugeState extends State<RiskGauge> with SingleTickerProviderStateMix
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1500),
     );
     _animation = Tween<double>(begin: 0, end: widget.riskScore).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
     _controller.forward();
   }
@@ -98,7 +98,7 @@ class _RiskGaugeState extends State<RiskGauge> with SingleTickerProviderStateMix
     super.didUpdateWidget(oldWidget);
     if (oldWidget.riskScore != widget.riskScore) {
       _animation = Tween<double>(begin: oldWidget.riskScore, end: widget.riskScore).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
       );
       _controller.reset();
       _controller.forward();
@@ -131,30 +131,42 @@ class _RiskGaugeState extends State<RiskGauge> with SingleTickerProviderStateMix
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                height: 100,
-                width: 180,
+                height: 105,
+                width: 190,
                 child: CustomPaint(
                   painter: _RiskGaugePainter(
                     score: currentScore,
-                    trackColor: colors.borderColor,
+                    trackColor: colors.borderColor.withOpacity(0.15),
                     successColor: colors.accentSuccess,
                     warningColor: colors.accentWarning,
                     dangerColor: colors.accentDanger,
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(
                 '${widget.riskScore.toStringAsFixed(0)} / 100',
-                style: AppTheme.headingMd(context, colors.textPrimary).copyWith(
-                  fontWeight: FontWeight.bold,
+                style: AppTheme.displayXl(context, colors.textPrimary).copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 26,
+                  letterSpacing: -0.5,
                 ),
               ),
-              Text(
-                widget.riskLabel.toUpperCase(),
-                style: AppTheme.caption(context, getRiskColor()).copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
+              const SizedBox(height: 2),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: getRiskColor().withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: getRiskColor().withOpacity(0.3), width: 1),
+                ),
+                child: Text(
+                  widget.riskLabel.toUpperCase(),
+                  style: AppTheme.caption(context, getRiskColor()).copyWith(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                    fontSize: 10,
+                  ),
                 ),
               ),
             ],
@@ -184,66 +196,73 @@ class _RiskGaugePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height);
     final radius = min(size.width / 2, size.height) - 10;
+    final rect = Rect.fromCircle(center: center, radius: radius);
     
     final paintTrack = Paint()
       ..color = trackColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
-      ..strokeCap = StrokeCap.round;
-
-    final paintFill = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
+      ..strokeWidth = 14
       ..strokeCap = StrokeCap.round;
 
     // Draw background track arc (semi circle: 180 degrees)
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      pi,
-      pi,
-      false,
-      paintTrack,
+    canvas.drawArc(rect, pi, pi, false, paintTrack);
+
+    double sweepAngle = (score / 100).clamp(0.0, 1.0) * pi;
+
+    final fillGradient = SweepGradient(
+      colors: [
+        successColor,
+        warningColor,
+        dangerColor,
+      ],
+      stops: const [0.0, 0.5, 1.0],
+      startAngle: pi,
+      endAngle: 2 * pi,
     );
 
-    // Color shift based on value
-    double sweepAngle = (score / 100) * pi;
-    if (score < 35) {
-      paintFill.color = successColor;
-    } else if (score < 70) {
-      paintFill.color = warningColor;
-    } else {
-      paintFill.color = dangerColor;
+    // Draw fill arc (no glow)
+    if (sweepAngle > 0.05) {
+      final paintFill = Paint()
+        ..shader = fillGradient.createShader(rect)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 14
+        ..strokeCap = StrokeCap.round;
+      canvas.drawArc(rect, pi, sweepAngle, false, paintFill);
     }
 
-    // Draw active arc
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      pi,
-      sweepAngle,
-      false,
-      paintFill,
-    );
+    // Determine color at current pointer for needle
+    Color currentNeedleColor = successColor;
+    if (score >= 70) {
+      currentNeedleColor = dangerColor;
+    } else if (score >= 35) {
+      currentNeedleColor = warningColor;
+    }
 
-    // Draw indicator needle line
-    final needlePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-
+    // Draw indicator needle line (clean, no glow)
     double needleAngle = pi + sweepAngle;
-    double needleLength = radius - 8;
+    double needleLength = radius - 4;
     Offset needleTarget = Offset(
       center.dx + needleLength * cos(needleAngle),
       center.dy + needleLength * sin(needleAngle),
     );
+
+    final needlePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5
+      ..strokeCap = StrokeCap.round;
     canvas.drawLine(center, needleTarget, needlePaint);
 
-    // Draw center hub pin
-    final hubPaint = Paint()
+    // Draw center hub pin (clean, no glow)
+    final hubOuter = Paint()
+      ..color = const Color(0xFF334155)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 8, hubOuter);
+
+    final hubInner = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, 6, hubPaint);
+    canvas.drawCircle(center, 5, hubInner);
   }
 
   @override
@@ -252,7 +271,7 @@ class _RiskGaugePainter extends CustomPainter {
   }
 }
 
-// A simple custom painted sparkline chart for analytics
+// A highly polished, custom painted cubic Bezier area sparkline chart for analytics
 class SparklineChart extends StatelessWidget {
   final List<double> data;
   final bool isPositive;
@@ -265,8 +284,8 @@ class SparklineChart extends StatelessWidget {
     final lineColor = isPositive ? colors.accentSuccess : colors.accentDanger;
 
     return Container(
-      height: 48,
-      width: 100,
+      height: 52,
+      width: 110,
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: CustomPaint(
         painter: _SparklinePainter(data: data, color: lineColor),
@@ -288,27 +307,63 @@ class _SparklinePainter extends CustomPainter {
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0
+      ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
 
     final path = Path();
+    final fillPath = Path();
+    
     double minVal = data.reduce(min);
     double maxVal = data.reduce(max);
     double range = maxVal - minVal == 0 ? 1 : maxVal - minVal;
 
     double stepX = size.width / (data.length - 1);
 
+    List<Offset> points = [];
     for (int i = 0; i < data.length; i++) {
       double x = i * stepX;
-      // Invert Y coordinates since Flutter starts at 0,0 top-left
       double y = size.height - ((data[i] - minVal) / range * size.height);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
+      points.add(Offset(x, y));
     }
 
+    path.moveTo(points[0].dx, points[0].dy);
+    fillPath.moveTo(points[0].dx, size.height);
+    fillPath.lineTo(points[0].dx, points[0].dy);
+
+    for (int i = 0; i < points.length - 1; i++) {
+      final p0 = points[i];
+      final p1 = points[i + 1];
+      
+      // Interpolate with a smooth cubic bezier S-curve
+      final controlPoint1 = Offset(p0.dx + (p1.dx - p0.dx) / 2, p0.dy);
+      final controlPoint2 = Offset(p0.dx + (p1.dx - p0.dx) / 2, p1.dy);
+      
+      path.cubicTo(
+        controlPoint1.dx, controlPoint1.dy,
+        controlPoint2.dx, controlPoint2.dy,
+        p1.dx, p1.dy,
+      );
+      
+      fillPath.cubicTo(
+        controlPoint1.dx, controlPoint1.dy,
+        controlPoint2.dx, controlPoint2.dy,
+        p1.dx, p1.dy,
+      );
+    }
+    
+    fillPath.lineTo(points.last.dx, size.height);
+    fillPath.close();
+
+    // Draw background gradient fill under line
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [color.withOpacity(0.35), color.withOpacity(0.0)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..style = PaintingStyle.fill;
+      
+    canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, paint);
   }
 
@@ -333,8 +388,8 @@ class SimpleBarChart extends StatelessWidget {
     final barColors = [
       colors.accentPrimary,
       colors.accentSecondary,
-      colors.accentWarning,
       colors.accentSuccess,
+      colors.accentWarning,
     ];
 
     return Column(
@@ -345,14 +400,16 @@ class SimpleBarChart extends StatelessWidget {
         final color = barColors[index % barColors.length];
 
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
               SizedBox(
-                width: 80,
+                width: 85,
                 child: Text(
                   key,
-                  style: AppTheme.caption(context, colors.textSecondary),
+                  style: AppTheme.caption(context, colors.textSecondary).copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -361,15 +418,27 @@ class SimpleBarChart extends StatelessWidget {
                   height: 12,
                   alignment: Alignment.centerLeft,
                   decoration: BoxDecoration(
-                    color: colors.borderColor,
+                    color: colors.borderColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: colors.borderColor.withOpacity(0.2), width: 1),
                   ),
                   child: FractionallySizedBox(
                     widthFactor: ratio,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: color,
+                        gradient: LinearGradient(
+                          colors: [color, color.withOpacity(0.75)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
                         borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withOpacity(0.3),
+                            blurRadius: 6,
+                            spreadRadius: -1,
+                          )
+                        ],
                       ),
                     ),
                   ),
@@ -377,11 +446,13 @@ class SimpleBarChart extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               SizedBox(
-                width: 24,
+                width: 28,
                 child: Text(
                   '$value',
                   textAlign: TextAlign.right,
-                  style: AppTheme.monoSm(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
+                  style: AppTheme.monoSm(context, colors.textPrimary).copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],

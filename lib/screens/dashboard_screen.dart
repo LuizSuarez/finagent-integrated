@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme.dart';
 import '../services/api_service.dart';
 import '../widgets/cards.dart';
@@ -65,13 +67,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: colors.bgPrimary,
       appBar: AppBar(
-        backgroundColor: colors.bgSurface,
+        backgroundColor: colors.bgPrimary.withOpacity(0.7),
         elevation: 0,
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(color: Colors.transparent),
+          ),
+        ),
         title: Row(
           children: [
-            Text(
-              'FINAGENT',
-              style: AppTheme.headingLg(context, colors.textPrimary).copyWith(letterSpacing: 2.0),
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Color(0xFF7B61FF), Color(0xFF00E5FF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              child: Text(
+                'FINAGENT',
+                style: AppTheme.headingLg(context, Colors.white).copyWith(
+                  letterSpacing: 2.0,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             // WebSocket live connection status
@@ -111,6 +129,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     decoration: BoxDecoration(
                       color: colors.accentDanger,
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.accentDanger.withOpacity(0.5),
+                          blurRadius: 6,
+                          spreadRadius: 1,
+                        )
+                      ],
                     ),
                   ),
                 )
@@ -126,11 +151,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Section: Pipeline Status
-              _buildPipelineStatusCard(context, apiState),
+              _buildPipelineStatusCard(context, apiState)
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 100.ms)
+                  .slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic),
               const SizedBox(height: 20),
 
               // Section: Quick Input Bar
-              _buildQuickInputBar(context),
+              _buildQuickInputBar(context)
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 180.ms)
+                  .slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic),
               const SizedBox(height: 20),
 
               // Section: Risk Overview & Portfolio Snapshot (responsive layout)
@@ -163,15 +194,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     );
                   }
                 },
-              ),
+              )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 260.ms)
+                  .slideY(begin: 0.08, end: 0, curve: Curves.easeOutCubic),
               const SizedBox(height: 24),
 
               // Section: Recent Action Cards (Horizontal Scroll)
-              _buildRecentActions(context, apiState),
+              _buildRecentActions(context, apiState)
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 340.ms)
+                  .slideY(begin: 0.08, end: 0, curve: Curves.easeOutCubic),
               const SizedBox(height: 24),
 
               // Section: Insights Feed (Last 5)
-              _buildInsightsFeed(context, apiState),
+              _buildInsightsFeed(context, apiState)
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 420.ms)
+                  .slideY(begin: 0.08, end: 0, curve: Curves.easeOutCubic),
               const SizedBox(height: 16),
             ],
           ),
@@ -224,7 +264,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'Active: ${state.activeAgent}',
-                    style: AppTheme.caption(context, colors.accentPrimary),
+                    style: AppTheme.caption(context, colors.accentPrimary).copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   ProgressBar(progress: state.pipelineProgress),
@@ -243,7 +283,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final colors = AppTheme.of(context);
 
     return CustomCard(
-      backgroundColor: colors.bgElevated,
+      backgroundColor: colors.bgSurface,
       onTap: () {
         // Switch shell to content input tab
         final shellState = context.findAncestorStateOfType<MainShellState>();
@@ -251,7 +291,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
       child: Row(
         children: [
-          Icon(Icons.edit_note, color: colors.accentPrimary, size: 24),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colors.accentPrimary.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.edit_note, color: colors.accentPrimary, size: 24),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -259,7 +306,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               style: AppTheme.bodyMd(context, colors.textSecondary).copyWith(fontStyle: FontStyle.italic),
             ),
           ),
-          Icon(Icons.arrow_forward_ios, color: colors.textSecondary, size: 14),
+          Icon(Icons.arrow_forward_ios, color: colors.textSecondary.withOpacity(0.6), size: 14),
         ],
       ),
     );
@@ -286,13 +333,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 6),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
             child: Text(
               portfolio.displayRiskExplanation,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: AppTheme.caption(context, colors.textSecondary),
+              style: AppTheme.caption(context, colors.textSecondary).copyWith(
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -305,7 +354,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final portfolio = state.portfolioState;
 
     return CustomCard(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -320,7 +369,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Text(
             '\$${portfolio.displayTotalValue.toStringAsRange()}',
             style: AppTheme.headingLg(context, colors.accentPrimary).copyWith(
-              fontFamily: 'Orbitron',
+              fontWeight: FontWeight.w900,
+              fontSize: 26,
             ),
           ),
           const SizedBox(height: 12),
@@ -338,7 +388,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       asset.displayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTheme.caption(context, colors.textPrimary),
+                      style: AppTheme.caption(context, colors.textPrimary).copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   Text(
@@ -384,11 +436,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   letterSpacing: 1.0,
                 ),
               ),
-              Text(
-                _isAutoScrolling ? '⚡ AUTO-SCROLLING (TAP TO PAUSE)' : '⏸️ PAUSED (TAP TO RESUME)',
-                style: AppTheme.caption(context, _isAutoScrolling ? colors.accentPrimary : colors.textSecondary).copyWith(
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: (_isAutoScrolling ? colors.accentPrimary : colors.textSecondary).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: (_isAutoScrolling ? colors.accentPrimary : colors.textSecondary).withOpacity(0.3), width: 0.8),
+                ),
+                child: Text(
+                  _isAutoScrolling ? '⚡ AUTO-SCROLLING' : '⏸️ PAUSED',
+                  style: AppTheme.caption(context, _isAutoScrolling ? colors.accentPrimary : colors.textSecondary).copyWith(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -457,19 +517,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             separatorBuilder: (context, index) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final insight = feed[index];
-              return StaggeredCardEntry(
-                index: index,
-                child: InsightCard(
-                  insight: insight,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => InsightDetailScreen(insight: insight),
-                      ),
-                    );
-                  },
-                ),
-              );
+              return InsightCard(
+                insight: insight,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => InsightDetailScreen(insight: insight),
+                    ),
+                  );
+                },
+              ).animate().fadeIn(duration: 350.ms, delay: (index * 60).ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic);
             },
           ),
       ],
@@ -482,65 +539,5 @@ extension DoubleFormatter on double {
   String toStringAsRange() {
     final formatter = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
     return toStringAsFixed(0).replaceAllMapped(formatter, (Match m) => '${m[1]},');
-  }
-}
-
-class StaggeredCardEntry extends StatefulWidget {
-  final Widget child;
-  final int index;
-
-  const StaggeredCardEntry({
-    super.key,
-    required this.child,
-    required this.index,
-  });
-
-  @override
-  State<StaggeredCardEntry> createState() => _StaggeredCardEntryState();
-}
-
-class _StaggeredCardEntryState extends State<StaggeredCardEntry> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _opacityAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-
-    Future.delayed(Duration(milliseconds: widget.index * 80), () {
-      if (mounted) {
-        _controller.forward();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _opacityAnimation,
-        child: widget.child,
-      ),
-    );
   }
 }

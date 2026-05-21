@@ -1,5 +1,7 @@
 import 'dart:async';
-import 'dart:math';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:flutter/material.dart';
 import '../models/insight.dart';
 import '../models/action_item.dart';
@@ -8,7 +10,6 @@ import '../models/portfolio.dart';
 import '../models/notification.dart';
 import '../models/settings.dart';
 import '../core/constants.dart';
-import 'mock_data.dart';
 
 class ApiService extends ChangeNotifier {
   // Theme state
@@ -24,8 +25,8 @@ class ApiService extends ChangeNotifier {
   AppSettings _settings = const AppSettings(
     autoRun: true,
     enableWebsocket: true,
-    mockMode: true,
-    backendUrl: AppConstants.defaultBackendUrl,
+    mockMode: false,
+    backendUrl: 'http://localhost:8000',
     preferredDomains: ['Business', 'Policy', 'Finance'],
   );
   AppSettings get settings => _settings;
@@ -36,7 +37,15 @@ class ApiService extends ChangeNotifier {
   }
 
   // Portfolio State ( baseline system state )
-  late PortfolioState _portfolioState;
+  PortfolioState _portfolioState = const PortfolioState(
+    totalValue: 0.0,
+    riskScore: 0.0,
+    riskLevel: 'Unknown',
+    riskExplanation: 'Awaiting real data from backend...',
+    assets: [],
+    activeCampaigns: [],
+    pricingTable: {},
+  );
   PortfolioState get portfolioState => _portfolioState;
 
   // Data lists
@@ -93,7 +102,6 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Preset custom scenarios in memory
   final Map<String, String> _customScenarios = {};
   Map<String, String> get allScenarios => {
         ...AppConstants.scenarios,
@@ -114,153 +122,220 @@ class ApiService extends ChangeNotifier {
 
   // Constructor
   ApiService() {
-    // Populate defaults
-    _portfolioState = MockData.getInitialPortfolioState();
-    _insights = MockData.getInitialInsights();
-    _actions = MockData.getInitialActions();
-    _notifications = MockData.getInitialNotifications();
-    _agentTraces = MockData.getAgentStepsForScenario('Sales Decline');
+    _fetchPortfolio();
   }
 
-  // --- Pipeline Simulation ---
-  StreamSubscription? _pipelineTimer;
+  Future<void> _fetchPortfolio() async {
+    try {
+      final res = await http.get(Uri.parse("${_settings.backendUrl}/api/v1/portfolio"));
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+        // Backend returns { portfolio: { holdings: {...}, risk_level, risk_score } }
+        // OR legacy format { portfolio: { AAPL: {...}, FDX: {...} } }
+        final portfolioObj = body['portfolio'];
+        if (portfolioObj == null) return;
 
-  void runPipeline(String scenarioName, String rawContent) {
+        // Detect nested holdings vs flat format
+        Map<String, dynamic> holdingsMap;
+        double riskScore = 25.0;
+        String riskLevel = 'Low';
+        String riskExplanation = 'Live portfolio data loaded.';
+
+        if (portfolioObj is Map && portfolioObj.containsKey('holdings')) {
+          // Nested format from backend
+          holdingsMap = Map<String, dynamic>.from(portfolioObj['holdings']);
+          riskScore = ((portfolioObj['risk_score'] as num?) ?? 0.25).toDouble() * 100;
+          riskLevel = portfolioObj['risk_level'] ?? 'Low';
+        } else if (portfolioObj is Map) {
+          // Flat format — each key is an asset
+          holdingsMap = Map<String, dynamic>.from(portfolioObj);
+        } else {
+          return;
+        }
+
+        double totalVal = 0;
+        List<AssetRow> assets = [];
+        holdingsMap.forEach((k, v) {
+          if (v is Map) {
+            double assetVal = (v['value'] as num? ?? 0).toDouble();
+            double allocPct = (v['allocation_pct'] as num? ?? 0).toDouble();
+            totalVal += assetVal;
+            assets.add(AssetRow(
+              name: k,
+              allocationPercent: allocPct,
+              value: assetVal,
+              riskLevel: 'Medium',
+            ));
+          }
+        });
+
+        _portfolioState = PortfolioState(
+          totalValue: totalVal,
+          riskScore: riskScore,
+          riskLevel: riskLevel,
+          riskExplanation: totalVal > 0 ? riskExplanation : 'Awaiting real data from backend...',
+          assets: assets,
+          activeCampaigns: [],
+          pricingTable: {},
+        );
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Failed fetching portfolio: \$e");
+    }
+  }
+
+  WebSocketChannel? _channel;
+
+  void runScenario(String scenarioId) async {
     if (_isPipelineRunning) return;
 
     _isPipelineRunning = true;
     _pipelineProgress = 0.0;
     _pipelineLogs = [];
     _activeAgent = 'Starting Agent Matrix...';
-    _agentTraces = MockData.getAgentStepsForScenario(scenarioName);
+    _agentTraces = [];
+    _actions.clear();
+    _insights.clear();
     notifyListeners();
 
-    int stepIndex = 0;
-    int logCounter = 0;
+    final isLive = scenarioId == '__live__';
+    final endpoint = isLive
+        ? '${_settings.backendUrl}/api/v1/pipeline/run'
+        : '${_settings.backendUrl}/api/v1/scenario/$scenarioId';
 
-    // Simulate logs streaming
-    const logInterval = Duration(milliseconds: 300);
-    _pipelineLogs.add('[SYSTEM] Initializing Agentic Content-to-Action Pipeline...');
-    _pipelineLogs.add('[SYSTEM] Ingesting content payload (${rawContent.length} chars)...');
+    _pipelineLogs.add('[SYSTEM] Triggering remote FastAPI Pipeline...');
 
-    _pipelineTimer = Stream.periodic(logInterval).listen((_) {
-      if (!_isPipelineRunning) return;
+    try {
+      final response = await http.post(
+        Uri.parse(endpoint),
+        headers: {'Content-Type': 'application/json'},
+      );
 
-      logCounter++;
-      
-      // Update agent traces and pipeline step index
-      int activeStep = min(stepIndex, _agentTraces.length - 1);
-      
-      // Update trace status
-      List<AgentTrace> updatedTraces = [];
-      for (int i = 0; i < _agentTraces.length; i++) {
-        if (i < activeStep) {
-          updatedTraces.add(AgentTrace(
-            agentName: _agentTraces[i].agentName,
-            iconName: _agentTraces[i].iconName,
-            status: 'done',
-            inputReceived: _agentTraces[i].inputReceived,
-            outputProduced: _agentTraces[i].outputProduced,
-            reasoning: _agentTraces[i].reasoning,
-            timestamp: _agentTraces[i].timestamp,
-            durationMs: _agentTraces[i].durationMs,
-          ));
-        } else if (i == activeStep) {
-          updatedTraces.add(AgentTrace(
-            agentName: _agentTraces[i].agentName,
-            iconName: _agentTraces[i].iconName,
-            status: 'running',
-            inputReceived: _agentTraces[i].inputReceived,
-            outputProduced: null,
-            reasoning: _agentTraces[i].reasoning,
-            timestamp: DateTime.now(),
-            durationMs: _agentTraces[i].durationMs,
-          ));
-        } else {
-          updatedTraces.add(_agentTraces[i]);
-        }
-      }
-      _agentTraces = updatedTraces;
-      
-      final currentAgentObj = _agentTraces[activeStep];
-      _activeAgent = currentAgentObj.displayAgentName;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final runId = data['run_id'];
+        _pipelineLogs.add('[SYSTEM] Pipeline started. Run ID: $runId');
 
-      // Add dummy logs for agent activity
-      if (logCounter % 3 == 1) {
-        _pipelineLogs.add('[${currentAgentObj.displayAgentName}] Initializing reason sequence...');
-      } else if (logCounter % 3 == 2) {
-        _pipelineLogs.add('[${currentAgentObj.displayAgentName}] Ingest: ${currentAgentObj.displayInputReceived.substring(0, min(30, currentAgentObj.displayInputReceived.length))}...');
+        _channel = WebSocketChannel.connect(
+            Uri.parse('ws://localhost:8000/api/v1/stream'));
+        _channel!.stream.listen((message) {
+          final payload = jsonDecode(message);
+          final type = payload['type'];
+
+          if (type == 'connected') {
+            _pipelineLogs.add('[SYSTEM] ${payload['message']}');
+            notifyListeners();
+          } else if (type == 'agent_progress') {
+            _activeAgent = payload['agent_id'] ?? _activeAgent;
+            _pipelineLogs.add('[$_activeAgent] Reasoning update received...');
+
+            final tracesRaw =
+                payload['trace_log'] as List<dynamic>? ?? [];
+            _agentTraces = tracesRaw
+                .map((e) => AgentTrace(
+                      agentName: e['agent_id'],
+                      iconName: 'smart_toy',
+                      status: e['fallback_triggered'] == true ? 'error' : 'done',
+                      inputReceived: 'Payload received',
+                      outputProduced:
+                          'Generated output with confidence ${e['confidence_score']}',
+                      reasoning: (e['reasoning_trace'] as List<dynamic>?)
+                          ?.join('\n'),
+                      timestamp: DateTime.now(),
+                      durationMs: e['execution_time_ms'],
+                    ))
+                .toList();
+
+            _pipelineProgress = _agentTraces.length / 8.0;
+            notifyListeners();
+          } else if (type == 'pipeline_complete') {
+            _isPipelineRunning = false;
+            _pipelineProgress = 1.0;
+            _activeAgent = 'Idle';
+            _pipelineLogs.add('[SYSTEM] Pipeline complete.');
+
+            final insightRaw = payload['insight'];
+            if (insightRaw != null) {
+              _insights.insert(
+                  0,
+                  Insight(
+                    id: 'ins_${DateTime.now().millisecondsSinceEpoch}',
+                    title: insightRaw['summary'] ?? 'Market Insight',
+                    domain: 'Finance',
+                    severity: insightRaw['severity'] ?? 'Medium',
+                    timestamp: DateTime.now(),
+                    source: 'FinAgent AI',
+                    facts: (insightRaw['tags'] as List<dynamic>?)
+                            ?.map((e) => e.toString())
+                            .toList() ??
+                        [],
+                    impactText:
+                        'Affecting: ${insightRaw['sector_focus']}',
+                  ));
+            }
+
+            final execRaw = payload['execution'];
+            if (execRaw != null && execRaw['trades'] != null) {
+              for (var t in (execRaw['trades'] as List<dynamic>)) {
+                _actions.insert(
+                    0,
+                    ActionItem(
+                      id: 'act_${DateTime.now().millisecondsSinceEpoch}_${t['asset']}',
+                      title: '${t['action']} ${t['asset']}',
+                      type: 'Trade',
+                      domain: 'Finance',
+                      description:
+                          'Execute ${t['action']} for ${t['quantity']} units at \$${t['exec_price']}',
+                      targetSystem: 'Brokerage API',
+                      metricName: 'Delta Value',
+                      metricValue: '\$${t['delta_value']}',
+                      isPositiveMetric: true,
+                      status: 'pending',
+                    ));
+              }
+            }
+
+            _notifications.insert(
+                0,
+                AppNotification(
+                  id: 'not_${DateTime.now().millisecondsSinceEpoch}',
+                  title: 'Pipeline Finished',
+                  body:
+                      'Generated new insights and rebalanced portfolio.',
+                  category: 'pipeline',
+                  isRead: false,
+                  timestamp: DateTime.now(),
+                ));
+
+            _fetchPortfolio();
+            notifyListeners();
+            _channel?.sink.close();
+          }
+        });
       } else {
-        _pipelineLogs.add('[${currentAgentObj.displayAgentName}] Reasoning complete (took ${currentAgentObj.displayDurationMs}ms)');
-        stepIndex++;
-      }
-
-      // Progress updating
-      _pipelineProgress = min((stepIndex / _agentTraces.length), 1.0);
-
-      // Finish logic
-      if (stepIndex >= _agentTraces.length) {
         _isPipelineRunning = false;
-        _pipelineProgress = 1.0;
-        _activeAgent = 'Idle';
-        _pipelineLogs.add('[SYSTEM] Pipeline complete. Extracted new insights and action points.');
-        
-        // Add final done state to all traces
-        _agentTraces = _agentTraces.map((e) => AgentTrace(
-          agentName: e.agentName,
-          iconName: e.iconName,
-          status: 'done',
-          inputReceived: e.inputReceived,
-          outputProduced: e.outputProduced ?? 'Successfully produced scenario tokens.',
-          reasoning: e.reasoning,
-          timestamp: e.timestamp,
-          durationMs: e.durationMs,
-        )).toList();
-
-        // Inject new insight and actions generated from mock data scenarios
-        final results = MockData.getPipelineResults(scenarioName);
-        final newInsight = results['insight'] as Insight;
-        final newActions = results['actions'] as List<ActionItem>;
-
-        _insights.insert(0, newInsight);
-        _actions.insertAll(0, newActions);
-
-        // System Alert Notification
-        _notifications.insert(0, AppNotification(
-          id: 'not_${DateTime.now().millisecondsSinceEpoch}',
-          title: 'Pipeline Ingestion Finished',
-          body: 'Generated insight: "${newInsight.displayTitle}" and recommended ${newActions.length} actions.',
-          category: 'pipeline',
-          isRead: false,
-          timestamp: DateTime.now(),
-        ));
-
-        _pipelineTimer?.cancel();
+        _pipelineLogs.add(
+            '[ERROR] Failed to start pipeline: ${response.statusCode}');
+        notifyListeners();
       }
-
+    } catch (e) {
+      _isPipelineRunning = false;
+      _pipelineLogs.add('[ERROR] Exception: $e');
       notifyListeners();
-    });
+    }
+  }
+
+  void runPipeline(String scenarioName, String rawContent) async {
+    runScenario('__live__');
   }
 
   void cancelPipeline() {
     if (!_isPipelineRunning) return;
-    _pipelineTimer?.cancel();
+    _channel?.sink.close();
     _isPipelineRunning = false;
     _activeAgent = 'Cancelled';
     _pipelineLogs.add('[SYSTEM] Pipeline cancelled by operator.');
-    
-    // Set running trace to error
-    _agentTraces = _agentTraces.map((e) => AgentTrace(
-      agentName: e.agentName,
-      iconName: e.iconName,
-      status: e.status == 'running' ? 'error' : e.status,
-      inputReceived: e.inputReceived,
-      outputProduced: e.status == 'running' ? 'Cancelled by operator' : e.outputProduced,
-      reasoning: e.reasoning,
-      timestamp: e.timestamp,
-      durationMs: e.durationMs,
-    )).toList();
-
     notifyListeners();
   }
 
@@ -277,26 +352,25 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
 
     int stepIndex = 0;
-    final totalSteps = action.displaySimulationSteps.length;
+    final steps = ['Validating trade parameters', 'Checking liquidity', 'Executing via API', 'Confirming fill'];
+    final totalSteps = steps.length;
 
     _simulationLogs.add('[SIMULATOR] Launching system simulation sandbox...');
-    _simulationLogs.add('[SIMULATOR] Targeting core interface: "${action.displayTargetSystem}"');
+    _simulationLogs.add('[SIMULATOR] Targeting core interface: "\${action.displayTargetSystem}"');
 
     _simulationTimer = Stream.periodic(const Duration(milliseconds: 600)).listen((_) {
       if (!_isSimulationRunning) return;
 
       if (stepIndex < totalSteps) {
-        _simulationLogs.add('[SIMULATOR] [OK] ${action.displaySimulationSteps[stepIndex]}');
+        _simulationLogs.add('[SIMULATOR] [OK] \${steps[stepIndex]}');
         stepIndex++;
         _simulationProgress = stepIndex / totalSteps;
       } else {
         _isSimulationRunning = false;
         _isSimulationComplete = true;
         _simulationProgress = 1.0;
-        _simulationLogs.add('[SIMULATOR] Applying state mutation diff matrices...');
         _simulationLogs.add('[SIMULATOR] Simulation completed. Baseline metrics mutated.');
 
-        // Update action status to simulated
         _actions = _actions.map((act) {
           if (act.id == action.id) {
             return ActionItem(
@@ -308,7 +382,7 @@ class ApiService extends ChangeNotifier {
               targetSystem: act.targetSystem,
               beforeState: act.beforeState,
               afterState: act.afterState,
-              simulationSteps: act.simulationSteps,
+              simulationSteps: steps,
               metricName: act.metricName,
               metricValue: act.metricValue,
               isPositiveMetric: act.isPositiveMetric,
@@ -319,33 +393,14 @@ class ApiService extends ChangeNotifier {
           return act;
         }).toList();
 
-        // Mutate System Portfolio State
-        _mutateSystemState(action);
-
-        // Trigger Notification
         _notifications.insert(0, AppNotification(
-          id: 'not_${DateTime.now().millisecondsSinceEpoch}',
+          id: 'not_\${DateTime.now().millisecondsSinceEpoch}',
           title: 'Action Simulation Complete',
-          body: 'Action "${action.displayTitle}" has successfully simulated outcome ${action.displayMetricValue} on target systems.',
+          body: 'Action "\${action.displayTitle}" has successfully simulated outcome \${action.displayMetricValue} on target systems.',
           category: 'action',
           isRead: false,
           timestamp: DateTime.now(),
         ));
-
-        // If specific drafts are triggered, inject drafted comms
-        if (action.id == 'act_sc_01' || action.id == 'act_01') {
-          _notifications.insert(0, AppNotification(
-            id: 'not_draft_${DateTime.now().millisecondsSinceEpoch}',
-            title: 'Marketing Draft Created',
-            body: 'AI-generated campaign newsletter is ready for review in notifications.',
-            category: 'draft',
-            isRead: false,
-            timestamp: DateTime.now(),
-            draftRecipient: 'marketing.distribution@finagent.ai',
-            draftSubject: '[PROMOTIONAL DRAFT] Q2 Retail Discount Promotion - Lahore',
-            draftBody: 'Hey Retail Partners,\n\nIn response to inventory levels in Lahore matching 92% capacity, we are introducing a temporary 15% discount on bulk logistics orders.\n\nCode: LAHORE-RESTOCK-Q2\nDuration: 14 Days.\n\nBest,\nAutonomous FinAgent System',
-          ));
-        }
 
         _simulationTimer?.cancel();
       }
@@ -353,60 +408,15 @@ class ApiService extends ChangeNotifier {
     });
   }
 
-  void _mutateSystemState(ActionItem action) {
-    double riskDelta = action.displayIsPositiveMetric ? -12.0 : 8.0;
-    double currentRisk = _portfolioState.displayRiskScore;
-    double newRisk = max(5.0, min(95.0, currentRisk + riskDelta));
-    String newRiskLvl = newRisk < 30 ? 'Low' : (newRisk < 65 ? 'Medium' : 'High');
-
-    double valDelta = action.id == 'act_sc_03' || action.id == 'act_03' ? 24500.0 : -8500.0;
-    double newValue = _portfolioState.displayTotalValue + valDelta;
-
-    List<ActiveCampaign> currentCampaigns = List.from(_portfolioState.displayActiveCampaigns);
-    if (action.displayType == 'Campaign') {
-      currentCampaigns.add(ActiveCampaign(
-        name: action.displayTitle,
-        status: 'Active',
-        projectedReach: 5000 + (Random().nextInt(3000)),
-      ));
+  void resetPortfolio() async {
+    try {
+      await http.post(Uri.parse("\${_settings.backendUrl}/api/v1/portfolio/reset"));
+      _actions = [];
+      _insights = [];
+      _fetchPortfolio();
+    } catch (e) {
+      debugPrint("Error resetting portfolio: \$e");
     }
-
-    Map<String, double> updatedPricing = Map.from(_portfolioState.displayPricingTable);
-    if (action.displayType == 'Pricing Update') {
-      // Surcharge adjustment standard SKU
-      updatedPricing['Standard SKU-A'] = 54.99;
-      updatedPricing['Logistics Tariff/km'] = 1.65;
-    }
-
-    // Adjust allocation percentages
-    List<AssetRow> updatedAssets = _portfolioState.displayAssets.map((asset) {
-      if (asset.displayName == 'Logistics Fleet') {
-        return AssetRow(
-          name: asset.name,
-          allocationPercent: asset.allocationPercent,
-          value: asset.value! + valDelta * 0.4,
-          riskLevel: newRiskLvl,
-        );
-      }
-      return asset;
-    }).toList();
-
-    _portfolioState = PortfolioState(
-      totalValue: newValue,
-      riskScore: newRisk,
-      riskLevel: newRiskLvl,
-      riskExplanation: 'State modified by simulation trace. Risk levels optimized: ${action.displayTitle} executed in sandbox.',
-      assets: updatedAssets,
-      activeCampaigns: currentCampaigns,
-      pricingTable: updatedPricing,
-    );
-  }
-
-  void resetPortfolio() {
-    _portfolioState = MockData.getInitialPortfolioState();
-    _actions = MockData.getInitialActions();
-    _insights = MockData.getInitialInsights();
-    notifyListeners();
   }
 
   void markAllNotificationsAsRead() {
@@ -432,7 +442,7 @@ class ApiService extends ChangeNotifier {
 
   @override
   void dispose() {
-    _pipelineTimer?.cancel();
+    _channel?.sink.close();
     _simulationTimer?.cancel();
     super.dispose();
   }

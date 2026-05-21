@@ -1,0 +1,11 @@
+{
+  "scenario_id": "earnings_beat",
+  "name": "Earnings Beat",
+  "description": "Simulation of a 40% Nvidia earnings beat and broad tech ETF rally.",
+  "triggers": [
+    "news_5",
+    "news_6"
+  ],
+  "expected_risk_level": "LOW",
+  "expected_trade_action": "BUY XOM"
+}

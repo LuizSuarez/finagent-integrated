@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../core/theme.dart';
@@ -22,7 +23,7 @@ class CustomCard extends StatelessWidget {
     this.glowColor,
     this.backgroundColor,
     this.padding,
-    this.borderRadius = 8.0,
+    this.borderRadius = 16.0, // Swapped to 16.0 for modern rounded layout
     this.onTap,
   });
 
@@ -32,30 +33,48 @@ class CustomCard extends StatelessWidget {
     final cardBg = backgroundColor ?? colors.bgSurface;
     final borderCol = colors.borderColor;
 
-    Widget cardContent = Container(
-      padding: padding ?? const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(color: borderCol, width: 1.0),
-        boxShadow: hasGlow
-            ? [
-                BoxShadow(
-                  color: glowColor ?? colors.glowColor,
-                  blurRadius: 12,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 0),
-                )
-              ]
-            : null,
+    Widget cardContent = ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0),
+        child: Container(
+          padding: padding ?? const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: Border.all(
+              color: hasGlow ? (glowColor ?? colors.accentPrimary).withOpacity(0.4) : borderCol,
+              width: 1.2,
+            ),
+            boxShadow: hasGlow
+                ? [
+                    BoxShadow(
+                      color: (glowColor ?? colors.glowColor).withOpacity(0.3),
+                      blurRadius: 20,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 4),
+                    )
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+          ),
+          child: child,
+        ),
       ),
-      child: child,
     );
 
     if (onTap != null) {
       return GestureDetector(
         onTap: onTap,
-        child: cardContent,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: cardContent,
+        ),
       );
     }
     return cardContent;
@@ -98,6 +117,7 @@ class InsightCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -105,11 +125,11 @@ class InsightCard extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: colors.bgElevated,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: colors.borderColor),
+                        color: colors.accentPrimary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: colors.accentPrimary.withOpacity(0.3), width: 1),
                       ),
                       child: Text(
                         insight.displayDomain.toUpperCase(),
@@ -121,11 +141,11 @@ class InsightCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: getSeverityColor().withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: getSeverityColor().withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: getSeverityColor().withOpacity(0.3), width: 1),
                       ),
                       child: Text(
                         insight.displaySeverity.toUpperCase(),
@@ -146,7 +166,7 @@ class InsightCard extends StatelessWidget {
             Text(
               insight.displayTitle,
               style: AppTheme.headingMd(context, colors.textPrimary).copyWith(
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.bold,
               ),
             ),
             if (!isCompact) ...[
@@ -205,6 +225,7 @@ class ActionCard extends StatelessWidget {
       padding: EdgeInsets.all(isCompact ? 12 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Wrap(
             spacing: 8,
@@ -217,11 +238,11 @@ class ActionCard extends StatelessWidget {
                 runSpacing: 4,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: colors.bgElevated,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: colors.borderColor),
+                      color: colors.accentSecondary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: colors.accentSecondary.withOpacity(0.3), width: 1),
                     ),
                     child: Text(
                       action.displayType.toUpperCase(),
@@ -231,11 +252,11 @@ class ActionCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: colors.bgElevated,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: colors.borderColor),
+                      color: colors.accentPrimary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: colors.accentPrimary.withOpacity(0.3), width: 1),
                     ),
                     child: Text(
                       action.displayDomain.toUpperCase(),
@@ -248,11 +269,11 @@ class ActionCard extends StatelessWidget {
               ),
               if (action.displayStatus == 'simulated')
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
-                    color: colors.accentSuccess.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: colors.accentSuccess),
+                    color: colors.accentSuccess.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: colors.accentSuccess, width: 1.2),
                   ),
                   child: Text(
                     'SIMULATED',
@@ -312,28 +333,30 @@ class ActionCard extends StatelessWidget {
                 onPressed: action.displayStatus == 'simulated' ? null : onSimulate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colors.accentPrimary,
-                  foregroundColor: Colors.black,
+                  foregroundColor: Colors.white,
                   disabledBackgroundColor: colors.bgElevated,
                   disabledForegroundColor: colors.textSecondary,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isCompact ? 10 : 16,
-                    vertical: isCompact ? 8 : 10,
+                    horizontal: isCompact ? 12 : 18,
+                    vertical: isCompact ? 8 : 12,
                   ),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shadowColor: colors.accentPrimary.withOpacity(0.4),
+                  elevation: action.displayStatus == 'simulated' ? 0 : 8,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       action.displayStatus == 'simulated' ? Icons.check : Icons.insights,
-                      size: isCompact ? 12 : 14,
+                      size: isCompact ? 12 : 15,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     Text(
                       action.displayStatus == 'simulated' ? 'Simulated' : 'Simulate',
-                      style: AppTheme.caption(context, action.displayStatus == 'simulated' ? colors.textSecondary : Colors.black).copyWith(
+                      style: AppTheme.caption(context, action.displayStatus == 'simulated' ? colors.textSecondary : Colors.white).copyWith(
                         fontWeight: FontWeight.bold,
-                        fontSize: isCompact ? 9 : 10,
+                        fontSize: isCompact ? 9 : 11,
                       ),
                     ),
                   ],
@@ -390,6 +413,7 @@ class _AgentTraceTileState extends State<AgentTraceTile> {
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.of(context);
+    final isCurrentlyRunning = widget.trace.displayStatus == 'running';
 
     Color getStatusColor() {
       switch (widget.trace.displayStatus.toLowerCase()) {
@@ -405,27 +429,26 @@ class _AgentTraceTileState extends State<AgentTraceTile> {
       }
     }
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      color: colors.bgSurface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: widget.trace.displayStatus == 'running' ? colors.accentPrimary : colors.borderColor,
-          width: widget.trace.displayStatus == 'running' ? 1.5 : 1.0,
-        ),
-      ),
+    return CustomCard(
+      padding: const EdgeInsets.all(4),
+      hasGlow: isCurrentlyRunning,
+      glowColor: colors.accentWarning,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          ListTile(
-            leading: Stack(
-              alignment: Alignment.center,
-              children: [
+          Material(
+            color: Colors.transparent,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              leading: Stack(
+                alignment: Alignment.center,
+                children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: getStatusColor().withOpacity(0.1),
+                    color: getStatusColor().withOpacity(0.12),
                     shape: BoxShape.circle,
+                    border: Border.all(color: getStatusColor().withOpacity(0.3), width: 1),
                   ),
                   child: Icon(
                     _getIcon(),
@@ -467,6 +490,7 @@ class _AgentTraceTileState extends State<AgentTraceTile> {
                       });
                     },
                   ),
+            ),
           ),
           if (_isExpanded && widget.trace.displayStatus != 'waiting') ...[
             Padding(
@@ -490,10 +514,10 @@ class _AgentTraceTileState extends State<AgentTraceTile> {
                   const SizedBox(height: 4),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: colors.bgElevated,
-                      borderRadius: BorderRadius.circular(4),
+                      color: colors.bgElevated.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: colors.borderColor),
                     ),
                     child: Text(
@@ -513,6 +537,7 @@ class _AgentTraceTileState extends State<AgentTraceTile> {
   Widget _buildSection(BuildContext context, String header, String content) {
     final colors = AppTheme.of(context);
     return Column(
+
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(

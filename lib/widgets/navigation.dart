@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
@@ -15,63 +17,48 @@ class CustomBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppTheme.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.bgSurface,
-        border: Border(top: BorderSide(color: colors.borderColor, width: 1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final tabWidth = constraints.maxWidth / 5;
-              final sliderWidth = 32.0;
-              final leftOffset = (currentIndex * tabWidth) + (tabWidth / 2) - (sliderWidth / 2);
-              
-              return Stack(
-                children: [
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeOutCubic,
-                    top: 0,
-                    left: leftOffset,
-                    child: Container(
-                      height: 3,
-                      width: sliderWidth,
-                      decoration: BoxDecoration(
-                        color: colors.accentPrimary,
-                        borderRadius: BorderRadius.circular(2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: colors.accentPrimary.withOpacity(0.5),
-                            blurRadius: 6,
-                            spreadRadius: 1,
-                          )
-                        ],
-                      ),
-                    ),
+    return SafeArea(
+      bottom: true,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 12.0, top: 4.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16.0, sigmaY: 16.0),
+            child: Container(
+              height: 72,
+              decoration: BoxDecoration(
+                color: colors.bgSurface.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: colors.borderColor,
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildNavItem(context, index: 0, icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard, label: 'Dashboard', width: tabWidth),
-                      _buildNavItem(context, index: 1, icon: Icons.add_circle_outline, activeIcon: Icons.add_circle, label: 'Input', width: tabWidth),
-                      _buildNavItem(context, index: 2, icon: Icons.psychology_outlined, activeIcon: Icons.psychology, label: 'Agents', width: tabWidth),
-                      _buildNavItem(context, index: 3, icon: Icons.insights_outlined, activeIcon: Icons.insights, label: 'Simulate', width: tabWidth),
-                      _buildNavItem(context, index: 4, icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: 'Analytics', width: tabWidth),
-                    ],
+                  BoxShadow(
+                    color: colors.glowColor.withOpacity(0.15),
+                    blurRadius: 15,
+                    spreadRadius: -2,
+                    offset: const Offset(0, 2),
                   ),
                 ],
-              );
-            },
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(context, index: 0, icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard, label: 'Dashboard'),
+                  _buildNavItem(context, index: 1, icon: Icons.add_circle_outline, activeIcon: Icons.add_circle, label: 'Input'),
+                  _buildNavItem(context, index: 2, icon: Icons.psychology_outlined, activeIcon: Icons.psychology, label: 'Agents'),
+                  _buildNavItem(context, index: 3, icon: Icons.insights_outlined, activeIcon: Icons.insights, label: 'Simulate'),
+                  _buildNavItem(context, index: 4, icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: 'Analytics'),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -84,26 +71,48 @@ class CustomBottomNavBar extends StatelessWidget {
     required IconData icon,
     required IconData activeIcon,
     required String label,
-    required double width,
   }) {
     final colors = AppTheme.of(context);
     final isSelected = currentIndex == index;
     final activeColor = colors.accentPrimary;
     final inactiveColor = colors.textSecondary.withOpacity(0.7);
 
-    return GestureDetector(
-      onTap: () => onTap(index),
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: width,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onTap(index),
+        behavior: HitTestBehavior.opaque,
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 9), // Replaces indicator height + spacing
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: isSelected ? activeColor : inactiveColor,
-              size: 24,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected ? colors.accentPrimary.withOpacity(0.12) : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? colors.accentPrimary.withOpacity(0.3) : Colors.transparent,
+                  width: 1.5,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: colors.glowColor.withOpacity(0.2),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        )
+                      ]
+                    : [],
+              ),
+              child: Icon(
+                isSelected ? activeIcon : icon,
+                color: isSelected ? activeColor : inactiveColor,
+                size: 24,
+              ).animate(target: isSelected ? 1 : 0)
+               .scale(begin: const Offset(1, 1), end: const Offset(1.15, 1.15), duration: 250.ms, curve: Curves.easeOutBack)
+               .then()
+               .shake(hz: 2, duration: 150.ms),
             ),
             const SizedBox(height: 4),
             Text(
@@ -111,6 +120,7 @@ class CustomBottomNavBar extends StatelessWidget {
               style: AppTheme.caption(context, isSelected ? activeColor : inactiveColor).copyWith(
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 10,
+                letterSpacing: isSelected ? 0.3 : 0,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,

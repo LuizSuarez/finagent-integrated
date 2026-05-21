@@ -1,29 +1,18 @@
-# Miscellaneous
-*.class
-*.log
+# ==============================================================================
+# Python & Backend Virtual Environments
+# ==============================================================================
+backend/.venv/
+.venv/
+venv/
+ENV/
+env/
+python_env/
 *.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+__pycache__/
 
-# IntelliJ / Android Studio
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# VS Code (optional)
-#.vscode/
-
-# Flutter / Dart / Pub
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# ==============================================================================
+# Flutter / Dart / Pub Dependencies & Build Artifacts
+# ==============================================================================
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -32,19 +21,17 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
-
-# Generated files
-.generated/
-.dart_tool/
-.flutter-plugins-dependencies
-
-# Symbolication
+**/doc/api/
 app.*.symbols
-
-# Obfuscation
 app.*.map.json
 
-# Android builds
+# Generated plugin registrants
+**/generated_plugin_registrant.dart
+
+# ==============================================================================
+# Native Platform Build Directories & Caches
+# ==============================================================================
+# Android
 /android/app/debug
 /android/app/profile
 /android/app/release
@@ -53,6 +40,7 @@ app.*.map.json
 ios/Pods/
 ios/.symlinks/
 ios/Flutter/ephemeral/
+**/ios/Flutter/.last_build_id
 
 # macOS
 macos/Pods/
@@ -64,5 +52,29 @@ windows/flutter/ephemeral/
 # Linux
 linux/flutter/ephemeral/
 
-# Generated plugin registrants
-**/generated_plugin_registrant.dart
+# ==============================================================================
+# IDEs & Editor Configuration Caches
+# ==============================================================================
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code (Uncomment if you don't want to sync extensions/settings)
+#.vscode/
+
+# ==============================================================================
+# Miscellaneous Logs, Local Variables & System Files
+# ==============================================================================
+*.class
+*.log
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/

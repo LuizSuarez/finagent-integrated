@@ -83,18 +83,18 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
 
   // ── DARK ─────────────────────────────────────────────────────────────────
   static const dark = AppThemeColors(
-    bgPrimary:       Color(0xFF0F172A), // slate-900
-    bgSurface:       Color(0xFF1E293B), // slate-800
-    bgElevated:      Color(0xFF334155), // slate-700
-    accentPrimary:   Color(0xFF10B981), // emerald-500
-    accentSecondary: Color(0xFF6EE7B7), // emerald-300
-    accentWarning:   Color(0xFFF59E0B), // amber-500
-    accentDanger:    Color(0xFFF43F5E), // rose-500
-    accentSuccess:   Color(0xFF10B981), // emerald-500
-    textPrimary:     Color(0xFFF1F5F9), // slate-100
+    bgPrimary:       Color(0xFF0F172A), // deep navy/black
+    bgSurface:       Color(0xFF1E293B), // translucent space blue
+    bgElevated:      Color(0xFF334155), // solid space blue
+    accentPrimary:   Color(0xFF10B981), // AI Purple
+    accentSecondary: Color(0xFF00E5FF), // Neon Cyan
+    accentWarning:   Color(0xFFFFB300), // Amber Gold
+    accentDanger:    Color(0xFFFF4560), // Sell Red
+    accentSuccess:   Color(0xFF00D4AA), // Buy Emerald
+    textPrimary:     Color(0xFFF8FAFC), // Off-white
     textSecondary:   Color(0xFF94A3B8), // slate-400
-    borderColor:     Color(0xFF1E293B), // slate-800
-    glowColor:       Color(0x2210B981), // emerald glow
+    borderColor:     Color(0xFF334155), // Translucent purple border
+    glowColor:       Color(0x00000000), // Purple neon glow
   );
 
   // ── LIGHT ────────────────────────────────────────────────────────────────
@@ -102,15 +102,15 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     bgPrimary:       Color(0xFFF8FAFC), // slate-50
     bgSurface:       Color(0xFFFFFFFF),
     bgElevated:      Color(0xFFF1F5F9), // slate-100
-    accentPrimary:   Color(0xFF059669), // emerald-600
-    accentSecondary: Color(0xFF34D399), // emerald-400
+    accentPrimary:   Color(0xFF10B981), // purple
+    accentSecondary: Color(0xFF00E5FF), // cyan
     accentWarning:   Color(0xFFD97706), // amber-600
     accentDanger:    Color(0xFFE11D48), // rose-600
     accentSuccess:   Color(0xFF059669), // emerald-600
     textPrimary:     Color(0xFF0F172A), // slate-900
     textSecondary:   Color(0xFF475569), // slate-600
     borderColor:     Color(0xFFE2E8F0), // slate-200
-    glowColor:       Color(0x15059669), // emerald glow
+    glowColor:       Color(0x00000000), // purple glow
   );
 }
 
@@ -141,27 +141,27 @@ class AppTheme {
       scaffoldBackgroundColor: const Color(0xFF0F172A),
       primaryColor: const Color(0xFF10B981),
       cardColor: const Color(0xFF1E293B),
-      dividerColor: const Color(0xFF1E293B),
+      dividerColor: const Color(0xFF334155),
       colorScheme: const ColorScheme.dark(
-        primary:   Color(0xFF10B981), // emerald-500
-        secondary: Color(0xFF6EE7B7), // emerald-300
-        surface:   Color(0xFF1E293B), // slate-800
-        error:     Color(0xFFF43F5E), // rose-500
+        primary:   Color(0xFF10B981), // purple
+        secondary: Color(0xFF00E5FF), // cyan
+        surface:   Color(0xFF1E293B), // glass surface
+        error:     Color(0xFFFF4560), // sell red
         onPrimary:   Color(0xFF0F172A),
         onSecondary: Color(0xFF0F172A),
-        onSurface:   Color(0xFFF1F5F9),
-        onError:     Color(0xFFF1F5F9),
+        onSurface:   Color(0xFFF8FAFC),
+        onError:     Color(0xFFF8FAFC),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: const Color(0xFF0F172A),
-        foregroundColor: const Color(0xFFF1F5F9),
+        foregroundColor: const Color(0xFFF8FAFC),
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.outfit(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFFF1F5F9),
-          letterSpacing: 0.1,
+          color: const Color(0xFFF8FAFC),
+          letterSpacing: 0.5,
         ),
         iconTheme: const IconThemeData(color: Color(0xFF94A3B8)),
       ),
@@ -176,7 +176,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF1E293B),
+        fillColor: const Color(0xFF0F172A),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -192,19 +192,19 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFF43F5E)),
+          borderSide: const BorderSide(color: Color(0xFFFF4560)),
         ),
-        labelStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14),
-        hintStyle: GoogleFonts.inter(color: const Color(0xFF475569), fontSize: 14),
+        labelStyle: GoogleFonts.plusJakartaSans(color: const Color(0xFF94A3B8), fontSize: 14),
+        hintStyle: GoogleFonts.plusJakartaSans(color: const Color(0xFF475569), fontSize: 14),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF10B981),
-          foregroundColor: const Color(0xFF0F172A),
+          foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 0.5),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -213,31 +213,31 @@ class AppTheme {
           side: const BorderSide(color: Color(0xFF10B981), width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 0.5),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: const Color(0xFF10B981),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.3),
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: const Color(0xFF1E293B),
         selectedColor: const Color(0xFF10B981).withOpacity(0.15),
         side: const BorderSide(color: Color(0xFF334155)),
-        labelStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13),
-        secondaryLabelStyle: GoogleFonts.inter(color: const Color(0xFF10B981), fontSize: 13),
+        labelStyle: GoogleFonts.plusJakartaSans(color: const Color(0xFF94A3B8), fontSize: 13),
+        secondaryLabelStyle: GoogleFonts.plusJakartaSans(color: const Color(0xFF10B981), fontSize: 13),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: const Color(0xFF0F172A),
         selectedItemColor: const Color(0xFF10B981),
         unselectedItemColor: const Color(0xFF475569),
-        selectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.inter(fontSize: 11),
+        selectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 11),
         elevation: 0,
         type: BottomNavigationBarType.fixed,
       ),
@@ -246,9 +246,9 @@ class AppTheme {
         unselectedLabelColor: const Color(0xFF475569),
         indicatorColor: const Color(0xFF10B981),
         indicatorSize: TabBarIndicatorSize.label,
-        labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400),
-        dividerColor: const Color(0xFF1E293B),
+        labelStyle: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w400),
+        dividerColor: const Color(0xFF334155),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) =>
@@ -265,15 +265,15 @@ class AppTheme {
         linearTrackColor: Color(0xFF1E293B),
       ),
       dividerTheme: const DividerThemeData(
-        color: Color(0xFF1E293B),
+        color: Color(0xFF334155),
         thickness: 1,
         space: 1,
       ),
       iconTheme: const IconThemeData(color: Color(0xFF94A3B8), size: 20),
       textTheme: TextTheme(
-        bodyLarge:  GoogleFonts.inter(color: const Color(0xFFF1F5F9), fontSize: 16),
-        bodyMedium: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14),
-        bodySmall:  GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 12),
+        bodyLarge:  GoogleFonts.plusJakartaSans(color: const Color(0xFFF8FAFC), fontSize: 16),
+        bodyMedium: GoogleFonts.plusJakartaSans(color: const Color(0xFF94A3B8), fontSize: 14),
+        bodySmall:  GoogleFonts.plusJakartaSans(color: const Color(0xFF64748B), fontSize: 12),
       ),
       extensions: [darkThemeColors],
     );
@@ -284,12 +284,12 @@ class AppTheme {
     return ThemeData(
       brightness: Brightness.light,
       scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-      primaryColor: const Color(0xFF059669),
+      primaryColor: const Color(0xFF10B981),
       cardColor: const Color(0xFFFFFFFF),
       dividerColor: const Color(0xFFE2E8F0),
       colorScheme: const ColorScheme.light(
-        primary:   Color(0xFF059669),
-        secondary: Color(0xFF34D399),
+        primary:   Color(0xFF10B981),
+        secondary: Color(0xFF00E5FF),
         surface:   Color(0xFFFFFFFF),
         error:     Color(0xFFE11D48),
         onPrimary:   Color(0xFFFFFFFF),
@@ -302,11 +302,11 @@ class AppTheme {
         foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: GoogleFonts.outfit(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: const Color(0xFF0F172A),
-          letterSpacing: 0.1,
+          letterSpacing: 0.5,
         ),
         iconTheme: const IconThemeData(color: Color(0xFF475569)),
       ),
@@ -333,80 +333,80 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF059669), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF10B981), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: Color(0xFFE11D48)),
         ),
-        labelStyle: GoogleFonts.inter(color: const Color(0xFF475569), fontSize: 14),
-        hintStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14),
+        labelStyle: GoogleFonts.plusJakartaSans(color: const Color(0xFF475569), fontSize: 14),
+        hintStyle: GoogleFonts.plusJakartaSans(color: const Color(0xFF94A3B8), fontSize: 14),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF059669),
-          foregroundColor: const Color(0xFFFFFFFF),
+          backgroundColor: const Color(0xFF10B981),
+          foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF059669),
-          side: const BorderSide(color: Color(0xFF059669), width: 1.5),
+          foregroundColor: const Color(0xFF10B981),
+          side: const BorderSide(color: Color(0xFF10B981), width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: const Color(0xFF059669),
+          foregroundColor: const Color(0xFF10B981),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+          textStyle: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: const Color(0xFFF1F5F9),
-        selectedColor: const Color(0xFF059669).withOpacity(0.12),
+        selectedColor: const Color(0xFF10B981).withOpacity(0.12),
         side: const BorderSide(color: Color(0xFFE2E8F0)),
-        labelStyle: GoogleFonts.inter(color: const Color(0xFF475569), fontSize: 13),
-        secondaryLabelStyle: GoogleFonts.inter(color: const Color(0xFF059669), fontSize: 13),
+        labelStyle: GoogleFonts.plusJakartaSans(color: const Color(0xFF475569), fontSize: 13),
+        secondaryLabelStyle: GoogleFonts.plusJakartaSans(color: const Color(0xFF10B981), fontSize: 13),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: const Color(0xFFFFFFFF),
-        selectedItemColor: const Color(0xFF059669),
+        selectedItemColor: const Color(0xFF10B981),
         unselectedItemColor: const Color(0xFF94A3B8),
-        selectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.inter(fontSize: 11),
+        selectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 11),
         elevation: 0,
         type: BottomNavigationBarType.fixed,
       ),
       tabBarTheme: TabBarThemeData(
-        labelColor: const Color(0xFF059669),
+        labelColor: const Color(0xFF10B981),
         unselectedLabelColor: const Color(0xFF94A3B8),
-        indicatorColor: const Color(0xFF059669),
+        indicatorColor: const Color(0xFF10B981),
         indicatorSize: TabBarIndicatorSize.label,
-        labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400),
+        labelStyle: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w400),
         dividerColor: const Color(0xFFE2E8F0),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) =>
             states.contains(WidgetState.selected)
-                ? const Color(0xFF059669)
+                ? const Color(0xFF10B981)
                 : const Color(0xFF94A3B8)),
         trackColor: WidgetStateProperty.resolveWith((states) =>
             states.contains(WidgetState.selected)
-                ? const Color(0xFF059669).withOpacity(0.3)
+                ? const Color(0xFF10B981).withOpacity(0.3)
                 : const Color(0xFFE2E8F0)),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: Color(0xFF059669),
+        color: Color(0xFF10B981),
         linearTrackColor: Color(0xFFE2E8F0),
       ),
       dividerTheme: const DividerThemeData(
@@ -416,49 +416,49 @@ class AppTheme {
       ),
       iconTheme: const IconThemeData(color: Color(0xFF475569), size: 20),
       textTheme: TextTheme(
-        bodyLarge:  GoogleFonts.inter(color: const Color(0xFF0F172A), fontSize: 16),
-        bodyMedium: GoogleFonts.inter(color: const Color(0xFF475569), fontSize: 14),
-        bodySmall:  GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 12),
+        bodyLarge:  GoogleFonts.plusJakartaSans(color: const Color(0xFF0F172A), fontSize: 16),
+        bodyMedium: GoogleFonts.plusJakartaSans(color: const Color(0xFF475569), fontSize: 14),
+        bodySmall:  GoogleFonts.plusJakartaSans(color: const Color(0xFF64748B), fontSize: 12),
       ),
       extensions: [AppThemeColors.light],
     );
   }
 
   // ── TYPOGRAPHY ────────────────────────────────────────────────────────────
-  // Inter for headings — clean, professional, widely trusted
+  // Outfit for headings — clean, geometric, high-tech fintech look
+  // Plus Jakarta Sans for body — warm, highly readable sans-serif
   // JetBrains Mono for logs/data — sharp monospace
-  // No Orbitron — too stylized for a serious intelligence platform
 
   static TextStyle displayXl(BuildContext context, Color color) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 32, fontWeight: FontWeight.w700,
         color: color, letterSpacing: -0.5,
       );
 
   static TextStyle headingLg(BuildContext context, Color color) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 24, fontWeight: FontWeight.w700,
         color: color, letterSpacing: -0.3,
       );
 
   static TextStyle headingMd(BuildContext context, Color color) =>
-      GoogleFonts.inter(
+      GoogleFonts.outfit(
         fontSize: 18, fontWeight: FontWeight.w600,
         color: color, letterSpacing: -0.1,
       );
 
   static TextStyle bodyMd(BuildContext context, Color color) =>
-      GoogleFonts.inter(
+      GoogleFonts.plusJakartaSans(
         fontSize: 15, fontWeight: FontWeight.w400, color: color,
       );
 
   static TextStyle bodySm(BuildContext context, Color color) =>
-      GoogleFonts.inter(
+      GoogleFonts.plusJakartaSans(
         fontSize: 13, fontWeight: FontWeight.w400, color: color,
       );
 
   static TextStyle caption(BuildContext context, Color color) =>
-      GoogleFonts.inter(
+      GoogleFonts.plusJakartaSans(
         fontSize: 11, fontWeight: FontWeight.w500,
         color: color, letterSpacing: 0.3,
       );

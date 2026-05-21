@@ -1,0 +1,18 @@
+[
+  {
+    "id": "social_1",
+    "platform": "Twitter",
+    "timestamp": "2026-05-20T10:05:00Z",
+    "author": "LogisticsInsider",
+    "content": "Diesel prices are skyrocketing after the OPEC announcement. Margins are going to be crushed this quarter for freight companies. #Logistics #OPEC",
+    "sentiment_score": -0.85
+  },
+  {
+    "id": "social_2",
+    "platform": "Reddit",
+    "timestamp": "2026-05-20T10:12:00Z",
+    "author": "EnergyBull",
+    "content": "Energy sector is poised for a massive breakout. XLE calls looking extremely attractive right now.",
+    "sentiment_score": 0.90
+  }
+]

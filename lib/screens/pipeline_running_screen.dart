@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme.dart';
 import '../models/agent_trace.dart';
 import '../services/api_service.dart';
@@ -37,7 +38,7 @@ class _PipelineRunningScreenState extends State<PipelineRunningScreen> {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
     }
@@ -81,11 +82,20 @@ class _PipelineRunningScreenState extends State<PipelineRunningScreen> {
     return Scaffold(
       backgroundColor: colors.bgPrimary,
       appBar: AppBar(
-        backgroundColor: colors.bgSurface,
+        backgroundColor: colors.bgPrimary.withOpacity(0.7),
         elevation: 0,
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(color: Colors.transparent),
+          ),
+        ),
         title: Text(
-          'Agent Execution Trace',
-          style: AppTheme.headingMd(context, colors.textPrimary),
+          'Pipeline Orchestrator',
+          style: AppTheme.headingMd(context, colors.textPrimary).copyWith(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
         ),
         actions: [
           if (isRunning)
@@ -128,7 +138,10 @@ class _PipelineRunningScreenState extends State<PipelineRunningScreen> {
                   const SizedBox(height: 20),
 
                   // ── Input preview ────────────────────────────────
-                  _buildInputPreview(context, colors),
+                  _buildInputPreview(context, colors)
+                      .animate()
+                      .fadeIn(duration: 350.ms)
+                      .slideY(begin: 0.1, end: 0),
                   const SizedBox(height: 24),
 
                   // ── Timeline trace ───────────────────────────────
@@ -149,14 +162,14 @@ class _PipelineRunningScreenState extends State<PipelineRunningScreen> {
                   ),
                   const SizedBox(height: 10),
                   _buildTerminalConsole(context, apiState, colors),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   if (doneStepsCount >= 2)
-                    SecondaryButton(
+                    PrimaryButton(
                       text: 'VIEW PARTIAL RESULTS',
                       width: double.infinity,
                       onPressed: () => Navigator.of(context).pop(),
-                    ),
+                    ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -173,19 +186,19 @@ class _PipelineRunningScreenState extends State<PipelineRunningScreen> {
         : widget.rawContent;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(12),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: colors.bgSurface.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: colors.borderColor.withOpacity(0.5)),
+            color: colors.bgSurface.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colors.borderColor),
           ),
           child: Row(
             children: [
-              Icon(Icons.feed_rounded, color: colors.accentPrimary, size: 15),
+              Icon(Icons.feed_rounded, color: colors.accentPrimary, size: 16),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -204,21 +217,21 @@ class _PipelineRunningScreenState extends State<PipelineRunningScreen> {
   Widget _buildTerminalConsole(
       BuildContext context, ApiService state, AppThemeColors colors) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(12),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
-          height: 160,
+          height: 180,
           width: double.infinity,
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF070B13).withOpacity(0.95),
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0x99070B13),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: colors.accentPrimary.withOpacity(0.2), width: 1.2),
+                color: colors.accentPrimary.withOpacity(0.3), width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: colors.accentPrimary.withOpacity(0.1),
+                color: colors.glowColor.withOpacity(0.1),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
@@ -236,20 +249,23 @@ class _PipelineRunningScreenState extends State<PipelineRunningScreen> {
                   itemCount: state.pipelineLogs.length,
                   itemBuilder: (context, index) {
                     final log = state.pipelineLogs[index];
-                    Color logColor = Colors.white38;
-                    if (log.contains('[SYSTEM]'))
+                    Color logColor = colors.textSecondary;
+                    if (log.contains('[SYSTEM]')) {
                       logColor = colors.accentPrimary;
-                    if (log.contains('complete') || log.contains('took'))
+                    } else if (log.contains('complete') || log.contains('took')) {
                       logColor = colors.accentSuccess;
-                    if (log.contains('Ingest:'))
+                    } else if (log.contains('Ingest:')) {
                       logColor = colors.accentSecondary;
-                    if (log.contains('cancel') || log.contains('Halted'))
+                    } else if (log.contains('cancel') || log.contains('Halted') || log.contains('error') || log.contains('Error')) {
                       logColor = colors.accentDanger;
+                    }
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Text(log,
-                          style: AppTheme.monoSm(context, logColor)
-                              .copyWith(fontSize: 10)),
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Text(
+                        log,
+                        style: AppTheme.monoSm(context, logColor)
+                            .copyWith(fontSize: 11, height: 1.3),
+                      ),
                     );
                   },
                 ),
@@ -299,7 +315,7 @@ class _StatusBadgeState extends State<_StatusBadge>
     final label = widget.isRunning ? 'EXECUTING AGENTS...' : 'WORKFLOW COMPLETE ✓';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(14),
@@ -333,7 +349,7 @@ class _StatusBadgeState extends State<_StatusBadge>
           Text(
             label,
             style: AppTheme.caption(context, color)
-                .copyWith(fontWeight: FontWeight.bold),
+                .copyWith(fontWeight: FontWeight.bold, fontSize: 10),
           ),
         ],
       ),
@@ -445,7 +461,7 @@ class _TimelineRowState extends State<_TimelineRow>
     final isRunning = status == 'running';
     final isError = status == 'error';
 
-    // Dot color matches the design.dart reference
+    // Dot color matches the design rules
     Color dotColor = colors.borderColor;
     if (isRunning) dotColor = colors.accentWarning;
     if (isDone) dotColor = colors.accentPrimary;
@@ -501,132 +517,98 @@ class _TimelineRowState extends State<_TimelineRow>
                 opacity: _fade,
                 child: SlideTransition(
                   position: _slide,
-                  child: GestureDetector(
+                  child: CustomCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    hasGlow: isRunning,
+                    glowColor: dotColor,
                     onTap: () => setState(() => _expanded = !_expanded),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: colors.bgSurface.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isRunning
-                                  ? dotColor.withOpacity(0.5)
-                                  : colors.borderColor.withOpacity(0.5),
-                              width: isRunning ? 1.5 : 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Header row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.trace.displayAgentName,
+                                style: AppTheme.bodyMd(context, colors.textPrimary)
+                                    .copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            boxShadow: isRunning
-                                ? [
-                                    BoxShadow(
-                                      color: dotColor.withOpacity(0.2),
-                                      blurRadius: 12,
-                                      spreadRadius: 1,
-                                    )
-                                  ]
-                                : [],
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Header row
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      widget.trace.displayAgentName,
-                                      style: AppTheme.bodyMd(
-                                              context, colors.textPrimary)
-                                          .copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '[$ts]',
-                                    style: AppTheme.monoSm(
-                                            context, colors.textSecondary)
-                                        .copyWith(fontSize: 10),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
+                            const SizedBox(width: 8),
+                            Text(
+                              '[$ts]',
+                              style: AppTheme.monoSm(context, colors.textSecondary)
+                                  .copyWith(fontSize: 10),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
 
-                              // Status + expand arrow
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        width: 7,
-                                        height: 7,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: dotColor,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 7),
-                                      Text(
-                                        status.toUpperCase(),
-                                        style: AppTheme.caption(
-                                                context, dotColor)
-                                            .copyWith(
-                                                fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
-                                  Icon(
-                                    _expanded
-                                        ? Icons.expand_less_rounded
-                                        : Icons.expand_more_rounded,
-                                    size: 18,
-                                    color: colors.textSecondary
-                                        .withOpacity(0.6),
-                                  ),
-                                ],
-                              ),
-
-                              // Expandable reasoning
-                              AnimatedCrossFade(
-                                firstChild: const SizedBox.shrink(),
-                                secondChild: Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Divider(
-                                          color: colors.borderColor
-                                              .withOpacity(0.4),
-                                          height: 16),
-                                      Text(
-                                        widget.trace.displayReasoning,
-                                        style: AppTheme.caption(
-                                            context, colors.textSecondary),
-                                      ),
-                                    ],
+                        // Status + expand arrow
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: dotColor,
                                   ),
                                 ),
-                                crossFadeState: _expanded
-                                    ? CrossFadeState.showSecond
-                                    : CrossFadeState.showFirst,
-                                duration:
-                                    const Duration(milliseconds: 220),
-                              ),
-                            ],
-                          ),
+                                const SizedBox(width: 7),
+                                Text(
+                                  status.toUpperCase(),
+                                  style: AppTheme.caption(context, dotColor)
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                            Icon(
+                              _expanded
+                                  ? Icons.expand_less_rounded
+                                  : Icons.expand_more_rounded,
+                              size: 18,
+                              color: colors.textSecondary.withOpacity(0.6),
+                            ),
+                          ],
                         ),
-                      ),
+
+                        // Expandable reasoning
+                        AnimatedCrossFade(
+                          firstChild: const SizedBox.shrink(),
+                          secondChild: Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Divider(
+                                    color: colors.borderColor.withOpacity(0.4),
+                                    height: 16),
+                                Text(
+                                  widget.trace.displayReasoning,
+                                  style: AppTheme.caption(context, colors.textSecondary).copyWith(
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          crossFadeState: _expanded
+                              ? CrossFadeState.showSecond
+                              : CrossFadeState.showFirst,
+                          duration: const Duration(milliseconds: 220),
+                        ),
+                      ],
                     ),
                   ),
                 ),

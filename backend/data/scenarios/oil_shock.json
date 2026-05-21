@@ -1,0 +1,12 @@
+{
+  "scenario_id": "oil_shock",
+  "name": "Oil Shock",
+  "description": "Simulation of sudden OPEC production cuts and crude oil surging 18%.",
+  "triggers": [
+    "news_1",
+    "news_2",
+    "social_1"
+  ],
+  "expected_risk_level": "HIGH",
+  "expected_trade_action": "SELL FDX"
+}

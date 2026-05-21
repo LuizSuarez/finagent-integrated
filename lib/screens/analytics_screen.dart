@@ -5,7 +5,6 @@ import '../core/theme.dart';
 import '../models/action_item.dart';
 import '../services/api_service.dart';
 import '../widgets/cards.dart';
-import '../widgets/charts.dart';
 import '../widgets/feedback.dart';
 import '../widgets/state_display.dart';
 import 'insight_detail_screen.dart';
@@ -61,9 +60,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final apiState = Provider.of<ApiService>(context);
 
     // Compute stats from state
-    final totalRuns = apiState.insights.length + 3; // buffer mock
+    final pipelinesRun = apiState.agentTraces.isNotEmpty
+        ? (apiState.insights.length + 1)
+        : apiState.insights.length;
     final insightsCount = apiState.insights.length;
     final simulatedCount = apiState.actions.where((a) => a.displayStatus == 'simulated').length;
+    final pendingCount = apiState.actions.where((a) => a.displayStatus == 'pending').length;
     final simulatedActions = apiState.actions.where((a) => a.displayStatus == 'simulated').toList();
 
     // Chart break downs
@@ -74,9 +76,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
 
     final Map<String, int> outcomeBreakdown = {
-      'Campaign': apiState.actions.where((a) => a.displayType == 'Campaign' && a.displayStatus == 'simulated').length,
-      'Pricing': apiState.actions.where((a) => a.displayType == 'Pricing Update' && a.displayStatus == 'simulated').length,
-      'Logistics': apiState.actions.where((a) => a.displayType == 'Workflow Trigger' && a.displayStatus == 'simulated').length,
+      'Trade': apiState.actions.where((a) => a.displayType.toLowerCase().contains('trade') && a.displayStatus == 'simulated').length,
+      'Buy': apiState.actions.where((a) => a.displayTitle.toLowerCase().startsWith('buy') && a.displayStatus == 'simulated').length,
+      'Sell': apiState.actions.where((a) => a.displayTitle.toLowerCase().startsWith('sell') && a.displayStatus == 'simulated').length,
     };
 
     // Sorted insights list (Top 5 by severity)
@@ -141,7 +143,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ],
             ),
             const SizedBox(height: 10),
-            _buildSummaryStatsRow(context, totalRuns, insightsCount, simulatedCount),
+            _buildSummaryStatsRow(context, pipelinesRun, insightsCount, simulatedCount, pendingCount),
             const SizedBox(height: 24),
 
             // Section: Line Chart (Risk Trend)
@@ -259,12 +261,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildSummaryStatsRow(BuildContext context, int runs, int insights, int simulated) {
+  Widget _buildSummaryStatsRow(BuildContext context, int runs, int insights, int simulated, int pending) {
     final cards = [
-      _buildStatCard(context, 'PIPELINES RUN', '$runs', Icons.settings_input_component),
-      _buildStatCard(context, 'INSIGHTS EXTRACTED', '$insights', Icons.auto_graph),
       _buildStatCard(context, 'SIMULATIONS COMPLETED', '$simulated', Icons.science_outlined),
       _buildStatCard(context, 'AVG EXECUTION DURATION', '7.2s', Icons.timer_outlined),
+      _buildStatCard(context, 'PIPELINES RUN', '$runs', Icons.settings_input_component),
+      _buildStatCard(context, 'INSIGHTS EXTRACTED', '$insights', Icons.auto_graph),
+      _buildStatCard(context, 'PENDING ACTIONS', '$pending', Icons.pending_actions_outlined),
     ];
 
     return GestureDetector(
@@ -316,40 +319,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildRiskTrendSection(BuildContext context, ApiService state) {
-    final colors = AppTheme.of(context);
-    final score = state.portfolioState.displayRiskScore;
-
-    return CustomCard(
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Risk Score Stability Index',
-                  style: AppTheme.bodyMd(context, colors.textPrimary).copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Baseline variance: ±4.2% over past cycle. Mutated state: ${score.toStringAsFixed(0)}%',
-                  style: AppTheme.caption(context, colors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Custom painted sparkline
-          SparklineChart(
-            data: [42.0, 38.0, 36.0, 39.0, 35.0, score],
-            isPositive: score < 45,
-          ),
-        ],
       ),
     );
   }

@@ -1,0 +1,11 @@
+{
+  "scenario_id": "rate_hike",
+  "name": "Rate Hike",
+  "description": "Simulation of a 75bps Federal Reserve interest rate hike to cool inflation.",
+  "triggers": [
+    "news_3",
+    "news_4"
+  ],
+  "expected_risk_level": "LOW",
+  "expected_trade_action": "SELL AAPL"
+}

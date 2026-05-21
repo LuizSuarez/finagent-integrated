@@ -1,0 +1,18 @@
+[
+  {
+    "id": "news_1",
+    "timestamp": "2026-05-20T10:00:00Z",
+    "headline": "OPEC announces unexpected production cuts",
+    "source": "Financial Times",
+    "content": "OPEC+ members have agreed to cut oil production by 2 million barrels per day, citing market stabilization needs.",
+    "url": "https://example.com/news_1"
+  },
+  {
+    "id": "news_2",
+    "timestamp": "2026-05-20T10:15:00Z",
+    "headline": "Logistics companies face surging fuel costs",
+    "source": "Bloomberg",
+    "content": "Global freight and logistics providers are warning of significant margin compression as diesel prices soar following OPEC cuts.",
+    "url": "https://example.com/news_2"
+  }
+]

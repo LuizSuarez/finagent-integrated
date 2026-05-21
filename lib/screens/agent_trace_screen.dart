@@ -205,6 +205,7 @@ class _AgentTraceScreenState extends State<AgentTraceScreen> {
           Container(height: 30, width: 1, color: colors.borderColor),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'PIPELINE STATUS',
@@ -232,6 +233,7 @@ class _AgentTraceScreenState extends State<AgentTraceScreen> {
     final colors = AppTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           title,

@@ -25,29 +25,22 @@ class PrimaryButton extends StatelessWidget {
     return Container(
       width: width,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: disabled
-            ? null
-            : [
-                BoxShadow(
-                  color: colors.accentPrimary.withOpacity(0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ],
+        borderRadius: BorderRadius.circular(10),
+        color: disabled ? colors.bgElevated : const Color(0xFF00D4AA),
       ),
       child: ElevatedButton(
         onPressed: disabled ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: colors.accentPrimary,
-          foregroundColor: Colors.black, // High contrast text on cyan
-          disabledBackgroundColor: colors.bgElevated,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.black,
+          disabledBackgroundColor: Colors.transparent,
           disabledForegroundColor: colors.textSecondary,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
           ),
           elevation: 0,
+          shadowColor: Colors.transparent,
         ),
         child: isLoading
             ? SizedBox(
@@ -55,7 +48,7 @@ class PrimaryButton extends StatelessWidget {
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(colors.textPrimary),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
                 ),
               )
             : Row(
@@ -63,7 +56,7 @@ class PrimaryButton extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 18),
+                    Icon(icon, size: 18, color: disabled ? colors.textSecondary : Colors.black),
                     const SizedBox(width: 8),
                   ],
                   Flexible(
@@ -71,7 +64,7 @@ class PrimaryButton extends StatelessWidget {
                       text,
                       style: AppTheme.bodyMd(context, disabled ? colors.textSecondary : Colors.black).copyWith(
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+                        letterSpacing: 0.8,
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -108,13 +101,14 @@ class SecondaryButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
+          backgroundColor: colors.bgSurface.withOpacity(0.2),
           side: BorderSide(
-            color: disabled ? colors.bgElevated : colors.accentPrimary,
+            color: disabled ? colors.bgElevated : colors.accentPrimary.withOpacity(0.5),
             width: 1.5,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
           foregroundColor: colors.accentPrimary,
         ),
@@ -130,7 +124,8 @@ class SecondaryButton extends StatelessWidget {
               child: Text(
                 text,
                 style: AppTheme.bodyMd(context, disabled ? colors.textSecondary : colors.accentPrimary).copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
                 ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
@@ -165,9 +160,9 @@ class GhostButton extends StatelessWidget {
     return TextButton(
       onPressed: onPressed,
       style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
       child: Row(
@@ -182,6 +177,7 @@ class GhostButton extends StatelessWidget {
               text,
               style: AppTheme.caption(context, textColor).copyWith(
                 fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,

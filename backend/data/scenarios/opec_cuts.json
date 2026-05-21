@@ -1,0 +1,12 @@
+{
+  "scenario_id": "opec_cuts_001",
+  "name": "OPEC Production Cuts",
+  "description": "Simulation of sudden OPEC production cuts and impact on transportation sectors.",
+  "triggers": [
+    "news_1",
+    "news_2",
+    "social_1"
+  ],
+  "expected_risk_level": "HIGH",
+  "expected_trade_action": "SELL_XYZ_LOGISTICS"
+}
